@@ -1,0 +1,44 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { GlobalExceptionFilter } from '@/common/filters/global-exception.filter';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('v1');
+
+  // ============= cors =============
+  // const configService = app.get(ConfigService);
+  // const allowedOrigins = (configService.get<string>('CORS_ORIGINS') ?? '')
+  //   .split(',')
+  //   .map((o) => o.trim())
+  //   .filter(Boolean);
+
+  // app.enableCors({
+  //   origin: (origin, callback) => {
+  //     if (!origin || allowedOrigins.includes(String(origin))) {
+  //       callback(null, true);
+  //     } else {
+  //       callback(new Error(`CORS bloqueado para origin: ${origin}`));
+  //     }
+  //   },
+  //   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  //   allowedHeaders: ['Content-Type', 'Authorization'],
+  //   credentials: true,
+  // });
+
+  // I don't remember
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
+  // handle dtos validations
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+
+  await app.listen(process.env.PORT ?? 3000);
+}
+bootstrap();
