@@ -18,6 +18,13 @@ export const ERROR_CATALOG = {
     message: 'Error de validación',
     internalMessage: 'El body de la request no pasó las validaciones del DTO',
   },
+  RESPONSE_SHAPE_ERROR: {
+    code: 'RES-0001',
+    status: 500,
+    message: 'Error interno del servidor',
+    internalMessage:
+      'La respuesta del controller no cumple con su DTO de salida',
+  },
 } as const;
 
 export type ErrorKey = keyof typeof ERROR_CATALOG;

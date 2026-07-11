@@ -1,7 +1,8 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from '@/common/filters/global-exception.filter';
+import { ResponseInterceptor } from '@/common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,10 +28,14 @@ async function bootstrap() {
   //   credentials: true,
   // });
 
-  // I don't remember
+  // To catch all exceptions and wrap in standardized response
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // handle dtos validations
+  // Wraps successful responses in APIResponseDTO and validates them against
+  // the DTO declared with @ResponseDto() on each route
+  app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
+
+  // to handle dtos validations of input (nest decorators)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

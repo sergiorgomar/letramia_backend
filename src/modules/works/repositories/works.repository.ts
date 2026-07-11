@@ -24,4 +24,9 @@ export class WorksRepository {
     const [row] = await this.db.insert(workEntity).values(data).returning();
     return row;
   }
+
+  @HandleErrors('DATABASE_ERROR')
+  async findAll(): Promise<WorkEntity[]> {
+    return this.db.select().from(workEntity);
+  }
 }
