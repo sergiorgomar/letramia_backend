@@ -12,6 +12,8 @@ export class WorksService {
   }
 
   create(dto: CreateWorkDto): Promise<WorkResult> {
+    // validar categoria que exista
+    // validar que type exista
     return this.worksRepository.create(dto);
   }
 }

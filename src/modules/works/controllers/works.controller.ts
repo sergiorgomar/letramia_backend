@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
+import { ResponseDto } from '@/common/decorators/response-dto.decorator';
 import { WorksService } from '../services/works.service';
 import { CreateWorkDto } from '../dtos/input/create-work.dto';
 import { WorkResponseDto } from '../dtos/output/work-response.dto';
-import { ResponseDto } from '@/common/decorators/response-dto.decorator';
+import { CreateWorkResponseDto } from '../dtos/output/create-work-response.dto';
 
 @Controller('works')
 export class WorksController {
@@ -15,8 +16,8 @@ export class WorksController {
   }
 
   @Post()
-  @ResponseDto(WorkResponseDto, 'Obra creada con éxito')
-  create(@Body() dto: CreateWorkDto) {
+  @ResponseDto(CreateWorkResponseDto, 'Obra creada con éxito')
+  create(@Body() dto: CreateWorkDto): Promise<CreateWorkResponseDto> {
     return this.worksService.create(dto);
   }
 }

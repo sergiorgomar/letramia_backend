@@ -2,6 +2,7 @@ import {
   CallHandler,
   ExecutionContext,
   Injectable,
+  Logger,
   NestInterceptor,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -10,7 +11,6 @@ import { validateSync } from 'class-validator';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { APIResponseDTO } from '../dtos/api-response.dto';
-import { AppException } from '../exceptions/app.exception';
 import {
   RESPONSE_DTO_KEY,
   type ResponseDtoMeta,
@@ -18,6 +18,8 @@ import {
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(ResponseInterceptor.name);
+
   constructor(private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -43,16 +45,19 @@ export class ResponseInterceptor implements NestInterceptor {
     const instance = plainToInstance(dto, data);
     const errors = validateSync(instance, {
       whitelist: true,
-      forbidNonWhitelisted: true,
     });
-
     if (errors.length > 0) {
-      throw new AppException('RESPONSE_SHAPE_ERROR', {
-        dto: dto.name,
-        errors: errors.map((e) => ({
-          property: e.property,
-          constraints: e.constraints,
-        })),
+      this.logger.error(
+        `Response shape mismatch for ${dto.name}: ${JSON.stringify(
+          errors.map((e) => ({
+            property: e.property,
+            constraints: e.constraints,
+          })),
+        )}`,
+      );
+
+      errors.forEach((error) => {
+        delete (instance as Record<string, unknown>)[error.property];
       });
     }
 

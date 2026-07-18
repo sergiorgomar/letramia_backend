@@ -8,7 +8,6 @@ export type WorkCategoryEntity = typeof workCategoryEntity.$inferSelect;
 export type CreateWorkCategoryEntity = {
   name: string;
 };
-
 @Injectable()
 export class WorkCategoriesRepository {
   constructor(
