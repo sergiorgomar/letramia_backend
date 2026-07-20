@@ -1,4 +1,4 @@
-import { RoleName } from './role.enum';
+import { UserType } from './user-type.enum';
 
 /**
  * Shape de `req.user` después de que `FirebaseAuthGuard` resuelve la request.
@@ -9,6 +9,6 @@ export interface RequestUser {
   name: string;
   email: string;
   active: boolean;
-  role_id: string;
-  role_identifier: RoleName;
+  user_type_id: string;
+  user_type: UserType;
 }

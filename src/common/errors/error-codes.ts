@@ -18,6 +18,24 @@ export const ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Fallo ejecutando una operación contra la base de datos',
   },
+  ACCOUNT_ALREADY_EXISTS: {
+    code: 'ACC-0001',
+    status: 409,
+    message: 'Ya existe una cuenta registrada con ese correo.',
+    internalMessage: 'Supabase Auth rechazó el signUp: correo duplicado',
+  },
+  ACCOUNT_ALREADY_EXISTS_IN_DB: {
+    code: 'ACC-0003',
+    status: 409,
+    message: 'Ya existe una cuenta registrada con ese correo.',
+    internalMessage: 'Ya existe una cuenta con ese correo en base de datos',
+  },
+  SUPABASE_AUTH_ERROR: {
+    code: 'ACC-0002',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Fallo llamando a Supabase Auth Admin',
+  },
   VALIDATION_ERROR: {
     code: 'VAL-0001',
     status: 400,
@@ -31,6 +49,9 @@ export const ERROR_CATALOG = {
     internalMessage:
       'La respuesta del controller no cumple con su DTO de salida',
   },
+
+  // ── CUSTOM by module, service, etc.. ──────────────────────────────────────────
+  
 } as const;
 
 export type ErrorKey = keyof typeof ERROR_CATALOG;
