@@ -36,6 +36,18 @@ export const ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Fallo llamando a Supabase Auth Admin',
   },
+  INVALID_CREDENTIALS: {
+    code: 'ACC-0004',
+    status: 401,
+    message: 'Correo o contraseña incorrectos.',
+    internalMessage: 'Supabase Auth rechazó el signInWithPassword',
+  },
+  USER_DOESNT_EXIST_FOR_LOGIN: {
+    code: 'ACC-0005',
+    status: 401,
+    message: 'Correo o contraseña incorrectos.',
+    internalMessage: 'El usuario no existe en base de datos',
+  },
   VALIDATION_ERROR: {
     code: 'VAL-0001',
     status: 400,

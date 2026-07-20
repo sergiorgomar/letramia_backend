@@ -1,11 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { SUPABASE_ADMIN_PROVIDER } from '@/common/constants';
+import {
+  SUPABASE_ADMIN_PROVIDER,
+  SUPABASE_ANON_PROVIDER,
+} from '@/common/constants';
 import { AppException } from '@/common/exceptions/app.exception';
 import { ProviderName } from '@/infrastructure/auth/types/provider-name.enum';
 import { AccountResult } from '../types/account-result.type';
+import { LoginResult } from '../types/login-result.type';
 import { UsersRepository } from '../repositories/users.repository';
 import { CreateAccount } from '../types/create-account.type';
+import { LoginAccountDto } from '../dtos/input/login-account.dto';
 
 const CURRENT_AUTH_PROVIDER = ProviderName.SUPABASE;
 
@@ -14,6 +19,8 @@ export class AccountsService {
   constructor(
     @Inject(SUPABASE_ADMIN_PROVIDER)
     private readonly supabaseAdmin: SupabaseClient,
+    @Inject(SUPABASE_ANON_PROVIDER)
+    private readonly supabaseAnon: SupabaseClient,
     private readonly usersRepository: UsersRepository,
   ) {}
 
@@ -53,5 +60,28 @@ export class AccountsService {
     });
 
     return { id: user.id };
+  }
+
+  async login(dto: LoginAccountDto): Promise<LoginResult> {
+
+    const emailTaken = await this.usersRepository.existsByEmail(dto.email);
+    if (!emailTaken) {
+      throw new AppException('USER_DOESNT_EXIST_FOR_LOGIN', { email: dto.email });
+    }
+
+    const { data, error } = await this.supabaseAnon.auth.signInWithPassword({
+      email: dto.email,
+      password: dto.password,
+    });
+
+    if (error) {
+      throw new AppException('INVALID_CREDENTIALS', { email: dto.email }, error);
+    }
+
+    return {
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresAt: data.session.expires_at!,
+    };
   }
 }
