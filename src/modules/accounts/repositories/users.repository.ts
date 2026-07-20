@@ -36,4 +36,14 @@ export class UsersRepository {
       .limit(1);
     return !!row;
   }
+
+  @HandleErrors('DATABASE_ERROR')
+  async findByEmail(email: string): Promise<UserEntity | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(userEntity)
+      .where(eq(userEntity.email, email))
+      .limit(1);
+    return row;
+  }
 }

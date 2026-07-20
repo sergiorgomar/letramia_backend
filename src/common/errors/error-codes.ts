@@ -48,6 +48,24 @@ export const ERROR_CATALOG = {
     message: 'Correo o contraseña incorrectos.',
     internalMessage: 'El usuario no existe en base de datos',
   },
+  INVALID_TOKEN: {
+    code: 'ACC-0006',
+    status: 401,
+    message: 'Sesión inválida o expirada.',
+    internalMessage: 'Supabase Auth rechazó el access token (getUser)',
+  },
+  ACCOUNT_NOT_FOUND: {
+    code: 'ACC-0007',
+    status: 401,
+    message: 'Sesión inválida o expirada.',
+    internalMessage: 'Token válido en Supabase pero sin usuario en base de datos',
+  },
+  ACCOUNT_DISABLED: {
+    code: 'ACC-0008',
+    status: 403,
+    message: 'Tu cuenta está deshabilitada.',
+    internalMessage: 'El usuario existe pero active = false',
+  },
   VALIDATION_ERROR: {
     code: 'VAL-0001',
     status: 400,

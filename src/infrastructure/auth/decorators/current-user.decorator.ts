@@ -15,7 +15,6 @@ import { RequestUser } from '../types/request-user.types';
  * @Get('profile')
  * getProfile(@CurrentUser('firebase') firebase: RequestUser['firebase']) { ... }
  */
-///🔥🔥 epa epa, este es un decorador de users
 export const CurrentUser = createParamDecorator(
   (
     data: keyof RequestUser | undefined,

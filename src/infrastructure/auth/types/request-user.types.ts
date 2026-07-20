@@ -1,14 +1,12 @@
 import { UserType } from './user-type.enum';
 
 /**
- * Shape de `req.user` después de que `FirebaseAuthGuard` resuelve la request.
+ * Shape de `req.user` después de que `SupabaseAuthGuard` resuelve la request.
  * Disponible en cualquier handler/servicio a través del decorador `@CurrentUser()`.
  */
 export interface RequestUser {
   id: string;
-  name: string;
   email: string;
+  userTypes: UserType[];
   active: boolean;
-  user_type_id: string;
-  user_type: UserType;
 }

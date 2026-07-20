@@ -1,33 +1,35 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-
-//import { FirebaseProvider } from '../../firebase/firebase.provider';
-//import { UsersRepository } from '../../../modules/users/repositories/users.repository';
-import { AppException } from '../../../common/exceptions/app.exception';
-// import { ErrorCodes } from '../../../common/errors/error-codes';
+import { RequestUser } from '../types/request-user.types';
+import { SUPABASE_ANON_PROVIDER } from '@/common/constants';
+import { AppException } from '@/common/exceptions/app.exception';
+import { UsersRepository } from '@/modules/accounts/repositories/users.repository';
 
 /**
- * Guard global de autenticación con Firebase ID Token.
+ * Guard global de autenticación con el access token de Supabase.
  *
  * Flujo:
  * 1. Si el endpoint está marcado con @Public() → pasa sin validar.
  * 2. Lee el header `Authorization: Bearer <token>`.
- * 3. Verifica el token con Firebase Admin (`verifyIdToken`).
- * 4. Resuelve el usuario local por uid (o email como fallback).
+ * 3. Verifica el token contra Supabase (`auth.getUser`).
+ * 4. Resuelve el usuario local por email (fuente de la verdad, ver user.entity.ts).
  * 5. Adjunta `req.user: RequestUser`.
  * 6. Errores:
- *    - Sin token / token inválido → 401 Unauthorized
- *    - Usuario local no encontrado / inactivo → 403 Forbidden
+ *    - Sin token / token inválido → 401 (INVALID_TOKEN)
+ *    - Usuario local no encontrado → 401 (ACCOUNT_NOT_FOUND)
+ *    - Usuario local deshabilitado → 403 (ACCOUNT_DISABLED)
  */
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    // private readonly firebase: FirebaseProvider,
-    // private readonly usersRepository: UsersRepository,
+    @Inject(SUPABASE_ANON_PROVIDER)
+    private readonly supabaseAnon: SupabaseClient,
+    private readonly usersRepository: UsersRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -37,60 +39,39 @@ export class SupabaseAuthGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    //const request = context.switchToHttp().getRequest<Request>();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user?: RequestUser }>();
 
-    throw new AppException('NO_AUTORIZADO', { details: 'Token expirado' });
+    const authHeader = request.headers.authorization;
+    const accessToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice(7)
+      : undefined;
 
-    // Extraer el Bearer token
-    // const authHeader = request.headers.authorization;
-    // if (!authHeader) throw new AppException(ErrorCodes.GUARD_TOKEN_REQUIRED);
-    // if (!authHeader?.startsWith('Bearer '))
-    //   throw new AppException(ErrorCodes.GUARD_TOKEN_MALFORMED, {
-    //     malformedToken: authHeader,
-    //   });
+    if (!accessToken) {
+      throw new AppException('INVALID_TOKEN', { reason: 'missing_header' });
+    }
 
-    // // Verificar el token con Firebase
-    // const token = authHeader.slice(7);
-    // const decodedToken = await this.firebase.verifyIdToken(token);
+    const { data, error } = await this.supabaseAnon.auth.getUser(accessToken);
+    if (error || !data.user?.email) {
+      throw new AppException('INVALID_TOKEN', {}, error);
+    }
 
-    // // verificar que el usuario de firebase exist Y no este deshabilitado
-    // const firebaseUser = await this.firebase.getUser(decodedToken.uid);
-    // if (!firebaseUser || firebaseUser.disabled)
-    //   throw new AppException(ErrorCodes.GUARD_USER_FIREBASE_NOT_ACTIVE, {
-    //     deactivatedUser: firebaseUser,
-    //   });
+    const user = await this.usersRepository.findByEmail(data.user.email);
+    if (!user) {
+      throw new AppException('ACCOUNT_NOT_FOUND', { email: data.user.email });
+    }
 
-    // // verificar que el usuario exista en base de datos
-    // const user = await this.usersRepository.findWithRoleByEmail(
-    //   decodedToken.email ?? '',
-    // );
-    // if (!user)
-    //   throw new AppException(ErrorCodes.GUARD_USER_DB_NOT_FOUND, {
-    //     userEmail: decodedToken.email,
-    //   });
+    if (!user.active) {
+      throw new AppException('ACCOUNT_DISABLED', { userId: user.id });
+    }
 
-    // // verificar que el usuario esté habilitado
-    // if (!user.active)
-    //   throw new AppException(ErrorCodes.GUARD_USER_DB_NOT_ACTIVE, {
-    //     inactiveUser: user,
-    //   });
-
-    // // Verificar que el id de usuario en db coincida con el de UID firebase,
-    // // si no es así, significa, que no se ha ha aceptado la invitación
-    // if (user.id !== decodedToken.uid)
-    //   throw new AppException(ErrorCodes.GUARD_USER_NOT_COMPLETED, {
-    //     databaseUserId: user.id,
-    //     firebaseUserUID: decodedToken.uid,
-    //   });
-
-    // request.user = {
-    //   id: user.id,
-    //   name: user.name,
-    //   email: user.email,
-    //   active: user.active,
-    //   role_id: user.role_id,
-    //   role_identifier: user.role_identifier, // NECESITO EL ROLE NAME
-    // };
+    request.user = {
+      id: user.id,
+      email: user.email,
+      userTypes: user.userTypes,
+      active: user.active,
+    };
 
     return true;
   }
