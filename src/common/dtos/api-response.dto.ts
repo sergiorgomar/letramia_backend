@@ -1,3 +1,4 @@
+// TODO: SEPARAR ESTOS DTOS EN VARIOS ARCHIVOS
 export class ApiMeta {
   readonly traceId: string;
   readonly timestamp: string;

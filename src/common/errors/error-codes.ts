@@ -6,6 +6,12 @@ export const ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Error no clasificado',
   },
+  NO_AUTORIZADO: {
+    code: 'AUTH-0001',
+    status: 401,
+    message: 'No tiene permiso para acceder a este recurso.',
+    internalMessage: 'Error validando sesión o rol',
+  },
   DATABASE_ERROR: {
     code: 'DB-0001',
     status: 500,
