@@ -4,6 +4,8 @@ import { WorksRepository } from '../repositories/works.repository';
 import { WorkCategoriesRepository } from '../repositories/work-categories.repository';
 import { WorkTypesRepository } from '../repositories/work-types.repository';
 import { CreateWork } from '../types/create-work.type';
+import { CreateWorkResult } from '../types/create-work-result.type';
+import { UpdateWork } from '../types/update-work.type';
 import { WorkResult } from '../types/work-result.type';
 import { slugify } from '../utils/slugify';
 
@@ -17,12 +19,19 @@ export class WorksService {
     private readonly workTypesRepository: WorkTypesRepository,
   ) {}
 
-  findAll(): Promise<WorkResult[]> {
-    return this.worksRepository.findAll();
+  findAllByUser(userId: string): Promise<WorkResult[]> {
+    return this.worksRepository.findAllByUserId(userId);
   }
 
-  async create(dto: CreateWork): Promise<WorkResult> {
-    let id = '';
+  async findOne(id: string, userId: string): Promise<WorkResult> {
+    const work = await this.worksRepository.findByIdAndUserId(id, userId);
+    if (!work) {
+      throw new AppException('WORK_NOT_FOUND', { id, userId });
+    }
+    return work;
+  }
+
+  async create(dto: CreateWork): Promise<CreateWorkResult> {
     const categoryExists = await this.workCategoriesRepository.existsById(
       dto.workCategoryId,
     );
@@ -41,17 +50,61 @@ export class WorksService {
       });
     }
 
-    const baseSlug = slugify(dto.title);
+    const slug = await this.resolveUniqueSlug(dto.title);
 
-    const existingSlugs =
-      await this.worksRepository.findSlugsStartingWith(baseSlug);
+    return this.worksRepository.create({ ...dto, slug });
+  }
+
+  async update(
+    id: string,
+    userId: string,
+    dto: UpdateWork,
+  ): Promise<WorkResult> {
+    const work = await this.worksRepository.findByIdAndUserId(id, userId);
+    if (!work) {
+      throw new AppException('WORK_NOT_FOUND', { id, userId });
+    }
+
+    const categoryExists = await this.workCategoriesRepository.existsById(
+      dto.workCategoryId,
+    );
+    if (!categoryExists) {
+      throw new AppException('WORK_CATEGORY_NOT_FOUND', {
+        workCategoryId: dto.workCategoryId,
+      });
+    }
+
+    const typeExists = await this.workTypesRepository.existsById(
+      dto.workTypeId,
+    );
+    if (!typeExists) {
+      throw new AppException('WORK_TYPE_NOT_FOUND', {
+        workTypeId: dto.workTypeId,
+      });
+    }
+
+    // Solo se regenera el slug si el título realmente cambió: si no, cada
+    // guardado sin cambios de título recalcularía colisión contra sí mismo.
+    const slug =
+      dto.title === work.title
+        ? work.slug
+        : await this.resolveUniqueSlug(dto.title, id);
+
+    return this.worksRepository.update(id, { ...dto, slug });
+  }
+
+  private async resolveUniqueSlug(
+    title: string,
+    excludeId?: string,
+  ): Promise<string> {
+    const baseSlug = slugify(title);
+    const existingSlugs = await this.worksRepository.findSlugsStartingWith(
+      baseSlug,
+      excludeId,
+    );
 
     if (existingSlugs.length === 0) {
-      const created = await this.worksRepository.create({
-        ...dto,
-        slug: baseSlug,
-      });
-      id = created.id;
+      return baseSlug;
     }
 
     // El propio baseSlug (sin sufijo) cuenta como "sufijo 1".
@@ -62,13 +115,7 @@ export class WorksService {
       const suffix = Number(match[1]);
       if (suffix > lastSuffix) lastSuffix = suffix;
     }
-    const created = await this.worksRepository.create({
-      ...dto,
-      slug: `${baseSlug}-${lastSuffix + 1}`,
-    });
 
-    id = created.id;
-
-    return { id };
+    return `${baseSlug}-${lastSuffix + 1}`;
   }
 }

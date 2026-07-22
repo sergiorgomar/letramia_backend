@@ -11,4 +11,11 @@ export const WORKS_ERROR_CATALOG = {
     message: 'El tipo de obra seleccionado no existe.',
     internalMessage: 'workTypeId no corresponde a ningún tipo de obra existente',
   },
+  WORK_NOT_FOUND: {
+    code: 'WORK-0003',
+    status: 404,
+    message: 'La obra solicitada no existe.',
+    internalMessage:
+      'El id no corresponde a ninguna obra, o no pertenece al usuario autenticado',
+  },
 } as const;

@@ -7,6 +7,9 @@ export class WorkResponseDto {
   @IsString()
   title: string;
 
+  @IsString()
+  slug: string;
+
   @IsUUID()
   workCategoryId: string;
 
