@@ -7,6 +7,7 @@ import { UserType } from './user-type.enum';
 export interface RequestUser {
   id: string;
   email: string;
+  name: string;
   userTypes: UserType[];
   active: boolean;
 }

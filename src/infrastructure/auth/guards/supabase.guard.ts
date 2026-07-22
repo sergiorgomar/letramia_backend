@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -69,6 +74,7 @@ export class SupabaseAuthGuard implements CanActivate {
     request.user = {
       id: user.id,
       email: user.email,
+      name: user.name,
       userTypes: user.userTypes,
       active: user.active,
     };

@@ -26,6 +26,7 @@ export const userEntity = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     // Fuente de la verdad del usuario: no cambia aunque cambie el proveedor de auth.
     email: varchar('email', { length: 255 }).notNull().unique(),
+    name: varchar('name', { length: 255 }).notNull(),
     // Con qué proveedor se autentica hoy. Nunca viene del request, lo decide el backend.
     providerName: providerNameEnum('provider_name').notNull(),
     // El id/uid que ese proveedor le asigna al usuario.

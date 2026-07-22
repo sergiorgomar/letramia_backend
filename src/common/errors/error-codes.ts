@@ -66,6 +66,12 @@ export const ERROR_CATALOG = {
     message: 'Tu cuenta está deshabilitada.',
     internalMessage: 'El usuario existe pero active = false',
   },
+  INVALID_REFRESH_TOKEN: {
+    code: 'ACC-0009',
+    status: 401,
+    message: 'Error refrescando token.',
+    internalMessage: 'Supabase Auth rechazó el refreshSession',
+  },
   VALIDATION_ERROR: {
     code: 'VAL-0001',
     status: 400,
@@ -81,7 +87,6 @@ export const ERROR_CATALOG = {
   },
 
   // ── CUSTOM by module, service, etc.. ──────────────────────────────────────────
-  
 } as const;
 
 export type ErrorKey = keyof typeof ERROR_CATALOG;

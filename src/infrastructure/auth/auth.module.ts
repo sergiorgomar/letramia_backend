@@ -1,7 +1,6 @@
 import { APP_GUARD } from '@nestjs/core';
 import { Global, Module } from '@nestjs/common';
 import { SupabaseAuthGuard } from './guards/supabase.guard';
-import { UserTypesGuard } from './guards/user-types.guard';
 import { AccountsModule } from '@/modules/accounts/accounts.module';
 
 /**

@@ -10,6 +10,7 @@ import { userEntity } from '../entities/user.entity';
 export type UserEntity = typeof userEntity.$inferSelect;
 export type CreateUserEntity = {
   email: string;
+  name: string;
   providerName: ProviderName;
   providerId: string;
   userTypes: UserType[];

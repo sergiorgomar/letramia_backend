@@ -11,6 +11,7 @@ import { LoginResult } from '../types/login-result.type';
 import { UsersRepository } from '../repositories/users.repository';
 import { CreateAccount } from '../types/create-account.type';
 import { LoginAccountDto } from '../dtos/input/login-account.dto';
+import { RefreshTokenDto } from '../dtos/input/refresh-token.dto';
 
 const CURRENT_AUTH_PROVIDER = ProviderName.SUPABASE;
 
@@ -27,14 +28,14 @@ export class AccountsService {
   async createAccount(dto: CreateAccount): Promise<AccountResult> {
     const emailTaken = await this.usersRepository.existsByEmail(dto.email);
     if (emailTaken) {
-      throw new AppException('ACCOUNT_ALREADY_EXISTS_IN_DB', { email: dto.email });
+      throw new AppException('ACCOUNT_ALREADY_EXISTS_IN_DB', {
+        email: dto.email,
+      });
     }
-    
     const { data, error } = await this.supabaseAdmin.auth.admin.createUser({
       email: dto.email,
       password: dto.password,
       email_confirm: true,
-      user_metadata: { name: dto.name },
     });
 
     if (error) {
@@ -54,6 +55,7 @@ export class AccountsService {
 
     const user = await this.usersRepository.create({
       email: dto.email,
+      name: dto.name,
       providerName: CURRENT_AUTH_PROVIDER,
       providerId: data.user.id,
       userTypes: dto.userTypes,
@@ -63,10 +65,11 @@ export class AccountsService {
   }
 
   async login(dto: LoginAccountDto): Promise<LoginResult> {
-
     const emailTaken = await this.usersRepository.existsByEmail(dto.email);
     if (!emailTaken) {
-      throw new AppException('USER_DOESNT_EXIST_FOR_LOGIN', { email: dto.email });
+      throw new AppException('USER_DOESNT_EXIST_FOR_LOGIN', {
+        email: dto.email,
+      });
     }
 
     const { data, error } = await this.supabaseAnon.auth.signInWithPassword({
@@ -75,7 +78,27 @@ export class AccountsService {
     });
 
     if (error) {
-      throw new AppException('INVALID_CREDENTIALS', { email: dto.email }, error);
+      throw new AppException(
+        'INVALID_CREDENTIALS',
+        { email: dto.email },
+        error,
+      );
+    }
+
+    return {
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresAt: data.session.expires_at!,
+    };
+  }
+
+  async refresh(dto: RefreshTokenDto): Promise<LoginResult> {
+    const { data, error } = await this.supabaseAnon.auth.refreshSession({
+      refresh_token: dto.refreshToken,
+    });
+
+    if (error) {
+      throw new AppException('INVALID_REFRESH_TOKEN', {}, error);
     }
 
     return {

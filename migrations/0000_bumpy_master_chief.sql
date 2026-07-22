@@ -3,6 +3,7 @@ CREATE TYPE "public"."user_type" AS ENUM('escritor', 'lector');--> statement-bre
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" varchar(255) NOT NULL,
+	"name" varchar(255) NOT NULL,
 	"provider_name" "provider_name" NOT NULL,
 	"provider_id" varchar(255) NOT NULL,
 	"user_types" "user_type"[] NOT NULL,
