@@ -1,3 +1,5 @@
+import { WORKS_ERROR_CATALOG } from './error-works-codes';
+
 export const ERROR_CATALOG = {
   // ── General ──────────────────────────────────────────
   UNKNOWN_ERROR: {
@@ -87,6 +89,7 @@ export const ERROR_CATALOG = {
   },
 
   // ── CUSTOM by module, service, etc.. ──────────────────────────────────────────
+  ...WORKS_ERROR_CATALOG,
 } as const;
 
 export type ErrorKey = keyof typeof ERROR_CATALOG;

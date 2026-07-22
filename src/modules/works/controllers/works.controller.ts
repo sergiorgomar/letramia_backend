@@ -4,6 +4,8 @@ import { WorksService } from '../services/works.service';
 import { CreateWorkDto } from '../dtos/input/create-work.dto';
 import { WorkResponseDto } from '../dtos/output/work-response.dto';
 import { CreateWorkResponseDto } from '../dtos/output/create-work-response.dto';
+import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
+import { CurrentUser } from '@/infrastructure/auth/decorators/current-user.decorator';
 
 @Controller('works')
 export class WorksController {
@@ -17,7 +19,10 @@ export class WorksController {
 
   @Post()
   @ResponseDto(CreateWorkResponseDto, 'Obra creada con éxito')
-  create(@Body() dto: CreateWorkDto): Promise<CreateWorkResponseDto> {
-    return this.worksService.create(dto);
+  create(
+    @Body() dto: CreateWorkDto,
+    @CurrentUser() user: RequestUser,
+  ): Promise<CreateWorkResponseDto> {
+    return this.worksService.create({ ...dto, userId: user.id });
   }
 }

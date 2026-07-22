@@ -8,6 +8,20 @@
       "when": 1784673728434,
       "tag": "0000_bumpy_master_chief",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784746792555,
+      "tag": "0001_lame_iron_lad",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784748484878,
+      "tag": "0002_blushing_redwing",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import {
   IsString,
   IsOptional,
-  IsUrl,
+  // IsUrl,
   IsUUID,
   MaxLength,
 } from 'class-validator';
@@ -21,7 +21,7 @@ export class CreateWorkDto {
   @IsOptional()
   synopsis?: string;
 
-  @IsUrl()
-  @IsOptional()
-  coverUrl?: string;
+  // @IsUrl()
+  // @IsOptional()
+  // coverUrl?: string;
 }

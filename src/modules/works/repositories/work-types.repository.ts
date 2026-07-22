@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { eq } from 'drizzle-orm';
 import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 import { workTypeEntity } from '../entities/work-type.entity';
@@ -23,6 +24,23 @@ export class WorkTypesRepository {
 
   @HandleErrors('DATABASE_ERROR')
   async findAll(): Promise<WorkTypeEntity[]> {
-    return this.db.select().from(workTypeEntity);
+    return this.db
+      .select({
+        id: workTypeEntity.id,
+        name: workTypeEntity.name,
+        createdAt: workTypeEntity.createdAt,
+        updatedAt: workTypeEntity.updatedAt,
+      })
+      .from(workTypeEntity);
+  }
+
+  @HandleErrors('DATABASE_ERROR')
+  async existsById(id: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: workTypeEntity.id })
+      .from(workTypeEntity)
+      .where(eq(workTypeEntity.id, id))
+      .limit(1);
+    return !!row;
   }
 }
