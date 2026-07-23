@@ -11,6 +11,8 @@ import { WorkTypesRepository } from './repositories/work-types.repository';
 import { WorkChaptersController } from './controllers/work-chapters.controller';
 import { WorkChaptersService } from './services/work-chapters.service';
 import { WorkChaptersRepository } from './repositories/work-chapters.repository';
+import { PublicWorksController } from './controllers/public-works.controller';
+import { PublicWorksService } from './services/public-works.service';
 
 @Module({
   controllers: [
@@ -18,6 +20,7 @@ import { WorkChaptersRepository } from './repositories/work-chapters.repository'
     WorkCategoriesController,
     WorkTypesController,
     WorkChaptersController,
+    PublicWorksController,
   ],
   providers: [
     WorksService,
@@ -28,6 +31,7 @@ import { WorkChaptersRepository } from './repositories/work-chapters.repository'
     WorkTypesRepository,
     WorkChaptersService,
     WorkChaptersRepository,
+    PublicWorksService,
   ],
 })
 export class WorksModule {}

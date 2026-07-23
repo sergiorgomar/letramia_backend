@@ -1,4 +1,12 @@
-import { IsDate, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUrl,
+  IsUUID,
+} from 'class-validator';
+import { WorkStatus } from '../../types/work-status.enum';
 
 export class WorkResponseDto {
   @IsUUID()
@@ -19,6 +27,9 @@ export class WorkResponseDto {
   @IsString()
   @IsOptional()
   synopsis: string | null;
+
+  @IsEnum(WorkStatus)
+  status: WorkStatus;
 
   @IsUrl()
   @IsOptional()

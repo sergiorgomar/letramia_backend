@@ -15,6 +15,7 @@ import { WorkTypesRepository } from '../repositories/work-types.repository';
 import { CreateWork } from '../types/create-work.type';
 import { CreateWorkResult } from '../types/create-work-result.type';
 import { UpdateWork } from '../types/update-work.type';
+import { UpdateWorkStatus } from '../types/update-work-status.type';
 import { WorkResult } from '../types/work-result.type';
 import { slugify } from '../utils/slugify';
 
@@ -188,6 +189,26 @@ export class WorksService {
         : await this.resolveUniqueSlug(dto.title, id);
 
     const updated = await this.worksRepository.update(id, { ...dto, slug });
+    return toWorkResult(updated, DEFAULT_COVER_VARIANT);
+  }
+
+  // Publicar / despublicar. El estado es lo único que decide si la obra se
+  // ve en la web, así que se cambia por su propia vía y no dentro del update
+  // general (que pisaría el estado sin querer en cada guardado de info).
+  async updateStatus(
+    id: string,
+    userId: string,
+    dto: UpdateWorkStatus,
+  ): Promise<WorkResult> {
+    const work = await this.worksRepository.findByIdAndUserId(id, userId);
+    if (!work) {
+      throw new AppException('WORK_NOT_FOUND', { id, userId });
+    }
+
+    const updated = await this.worksRepository.updateStatus(id, {
+      status: dto.status,
+    });
+
     return toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 

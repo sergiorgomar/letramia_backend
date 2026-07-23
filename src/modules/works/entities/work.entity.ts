@@ -1,7 +1,20 @@
-import { pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  pgEnum,
+  uuid,
+  varchar,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 import { userEntity } from '@/modules/accounts/entities/user.entity';
+import { WorkStatus } from '../types/work-status.enum';
 import { workCategoryEntity } from './work-category.entity';
 import { workTypeEntity } from './work-type.entity';
+
+export const workStatusEnum = pgEnum(
+  'work_status',
+  Object.values(WorkStatus) as [WorkStatus, ...WorkStatus[]],
+);
 
 export const workEntity = pgTable('works', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -17,6 +30,8 @@ export const workEntity = pgTable('works', {
   title: varchar('title', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 280 }).notNull().unique(),
   synopsis: text('synopsis'),
+  // Toda obra nace como borrador; solo se ve en la web al publicarla.
+  status: workStatusEnum('status').notNull().default(WorkStatus.DRAFT),
   // Una URL por tamaño de variante, para que el caller elija cuál necesita
   // (thumb en listados, large en detalle, etc). Las 4 se generan/suben
   // juntas, así que comparten un único vencimiento de cache.

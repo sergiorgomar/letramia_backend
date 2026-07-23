@@ -36,6 +36,13 @@
       "when": 1784822874336,
       "tag": "0004_many_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784826655573,
+      "tag": "0005_motionless_green_goblin",
+      "breakpoints": true
     }
   ]
 }

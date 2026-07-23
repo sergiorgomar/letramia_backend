@@ -14,6 +14,7 @@ import type { Request } from 'express';
 import { ResponseDto } from '@/common/decorators/response-dto.decorator';
 import { WorksService } from '../services/works.service';
 import { CreateWorkDto } from '../dtos/input/create-work.dto';
+import { UpdateWorkStatusDto } from '../dtos/input/update-work-status.dto';
 import { WorkResponseDto } from '../dtos/output/work-response.dto';
 import { CreateWorkResponseDto } from '../dtos/output/create-work-response.dto';
 import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
@@ -57,6 +58,16 @@ export class WorksController {
     @CurrentUser() user: RequestUser,
   ) {
     return this.worksService.update(id, user.id, dto);
+  }
+
+  @Patch(':id/status')
+  @ResponseDto(WorkResponseDto, 'Estado de la obra actualizado con éxito')
+  updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateWorkStatusDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.worksService.updateStatus(id, user.id, dto);
   }
 
   @Post(':id/cover')

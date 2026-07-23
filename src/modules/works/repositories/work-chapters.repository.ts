@@ -106,6 +106,24 @@ export class WorkChaptersRepository {
     return row?.sequence ?? 0;
   }
 
+  @HandleErrors('DATABASE_ERROR')
+  async findByWorkIdAndSlug(
+    workId: string,
+    slug: string,
+  ): Promise<WorkChapterEntity | undefined> {
+    const [row] = await this.db
+      .select(WORK_CHAPTER_COLUMNS)
+      .from(workChapterEntity)
+      .where(
+        and(
+          eq(workChapterEntity.workId, workId),
+          eq(workChapterEntity.slug, slug),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
   // Acotado al workId: la unicidad del slug es por libro, no global.
   @HandleErrors('DATABASE_ERROR')
   async existsBySlug(
