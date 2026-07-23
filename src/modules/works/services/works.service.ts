@@ -3,9 +3,13 @@ import { AppException } from '@/common/exceptions/app.exception';
 import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-storage.provider';
 import {
   ImageProcessorService,
+  ImageVariantName,
   IMAGE_VARIANT_NAMES,
 } from '@/infrastructure/image/image-processor.service';
-import { WorksRepository } from '../repositories/works.repository';
+import {
+  WorkEntity,
+  WorksRepository,
+} from '../repositories/works.repository';
 import { WorkCategoriesRepository } from '../repositories/work-categories.repository';
 import { WorkTypesRepository } from '../repositories/work-types.repository';
 import { CreateWork } from '../types/create-work.type';
@@ -26,6 +30,23 @@ const COVER_ALLOWED_MIME_TYPES = new Set([
 const COVER_MIN_ASPECT_RATIO = 0.6;
 const COVER_MAX_ASPECT_RATIO = 0.8;
 
+// Margen de seguridad: se re-firma un poco antes de que venza de verdad,
+// para no arriesgarse a servir una URL que expira a mitad de un request.
+const COVER_URL_REFRESH_MARGIN_MS = 5 * 60 * 1000;
+
+const DEFAULT_COVER_VARIANT: ImageVariantName = 'medium';
+
+// Qué columna de WorkEntity guarda la URL de cada variante.
+const COVER_VARIANT_COLUMN: Record<
+  ImageVariantName,
+  'coverThumbUrl' | 'coverSmallUrl' | 'coverMediumUrl' | 'coverLargeUrl'
+> = {
+  thumb: 'coverThumbUrl',
+  small: 'coverSmallUrl',
+  medium: 'coverMediumUrl',
+  large: 'coverLargeUrl',
+};
+
 @Injectable()
 export class WorksService {
   constructor(
@@ -36,16 +57,75 @@ export class WorksService {
     private readonly imageProcessorService: ImageProcessorService,
   ) {}
 
-  findAllByUser(userId: string): Promise<WorkResult[]> {
-    return this.worksRepository.findAllByUserId(userId);
+  async findAllByUser(
+    userId: string,
+    coverVariant: ImageVariantName = DEFAULT_COVER_VARIANT,
+  ): Promise<WorkResult[]> {
+    const works = await this.worksRepository.findAllByUserId(userId);
+    return Promise.all(
+      works.map((work) => this.withFreshCoverUrl(work, coverVariant)),
+    );
   }
 
-  async findOne(id: string, userId: string): Promise<WorkResult> {
+  async findOne(
+    id: string,
+    userId: string,
+    coverVariant: ImageVariantName = DEFAULT_COVER_VARIANT,
+  ): Promise<WorkResult> {
     const work = await this.worksRepository.findByIdAndUserId(id, userId);
     if (!work) {
       throw new AppException('WORK_NOT_FOUND', { id, userId });
     }
-    return work;
+    return this.withFreshCoverUrl(work, coverVariant);
+  }
+
+  // Cache-aside: si las signed URLs guardadas siguen vigentes (con margen),
+  // se reutiliza la de la variante pedida tal cual; si vencieron (o nunca se
+  // firmaron), se piden las 4 de nuevo a Supabase y se persisten juntas
+  // (comparten un único vencimiento, porque se suben todas juntas).
+  private async withFreshCoverUrl(
+    work: WorkEntity,
+    coverVariant: ImageVariantName,
+  ): Promise<WorkResult> {
+    if (!work.coverMediumUrl) {
+      return toWorkResult(work, coverVariant);
+    }
+
+    const stillValid =
+      work.coverUrlExpiresAt &&
+      work.coverUrlExpiresAt.getTime() - COVER_URL_REFRESH_MARGIN_MS >
+        Date.now();
+    if (stillValid) {
+      return toWorkResult(work, coverVariant);
+    }
+
+    const refreshed = await this.refreshCoverUrls(work.id);
+    return toWorkResult(refreshed, coverVariant);
+  }
+
+  // Firma las 4 variantes de portada y persiste las URLs + el vencimiento
+  // compartido. Devuelve la fila actualizada completa.
+  private async refreshCoverUrls(id: string): Promise<WorkEntity> {
+    const signed = await Promise.all(
+      IMAGE_VARIANT_NAMES.map(async (name) => {
+        const path = `works/${id}/cover/${name}.webp`;
+        const { url, expiresAt } =
+          await this.supabaseStorageProvider.getSignedUrl(path);
+        return { name, url, expiresAt };
+      }),
+    );
+
+    const urlByVariant = Object.fromEntries(
+      signed.map(({ name, url }) => [name, url]),
+    ) as Record<ImageVariantName, string>;
+
+    return this.worksRepository.updateCoverUrls(id, {
+      coverThumbUrl: urlByVariant.thumb,
+      coverSmallUrl: urlByVariant.small,
+      coverMediumUrl: urlByVariant.medium,
+      coverLargeUrl: urlByVariant.large,
+      coverUrlExpiresAt: signed[0].expiresAt,
+    });
   }
 
   async create(dto: CreateWork): Promise<CreateWorkResult> {
@@ -107,7 +187,8 @@ export class WorksService {
         ? work.slug
         : await this.resolveUniqueSlug(dto.title, id);
 
-    return this.worksRepository.update(id, { ...dto, slug });
+    const updated = await this.worksRepository.update(id, { ...dto, slug });
+    return toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 
   async updateCover(
@@ -168,7 +249,12 @@ export class WorksService {
       }),
     );
 
-    return work;
+    // Se re-firma ya mismo (no se espera a la próxima lectura): el usuario
+    // acaba de subir la portada y espera verla al toque, y de paso el nuevo
+    // token de la signed URL rompe cachés de navegador/CDN sobre la misma
+    // ruta (el path no cambia por el upsert, pero el token sí).
+    const updated = await this.refreshCoverUrls(id);
+    return toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 
   private async resolveUniqueSlug(
@@ -196,4 +282,18 @@ export class WorksService {
 
     return `${baseSlug}-${lastSuffix + 1}`;
   }
+}
+
+function toWorkResult(
+  work: WorkEntity,
+  coverVariant: ImageVariantName,
+): WorkResult {
+  const { coverThumbUrl, coverSmallUrl, coverMediumUrl, coverLargeUrl, ...rest } =
+    work;
+  const byVariant = { coverThumbUrl, coverSmallUrl, coverMediumUrl, coverLargeUrl };
+
+  return {
+    ...rest,
+    coverUrl: byVariant[COVER_VARIANT_COLUMN[coverVariant]],
+  };
 }

@@ -13,7 +13,6 @@ export type CreateWorkEntity = {
   workCategoryId: string;
   workTypeId: string;
   synopsis?: string | null;
-  coverUrl?: string | null;
 };
 export type UpdateWorkEntity = {
   title: string;
@@ -21,6 +20,13 @@ export type UpdateWorkEntity = {
   workCategoryId: string;
   workTypeId: string;
   synopsis?: string | null;
+};
+export type UpdateCoverUrls = {
+  coverThumbUrl: string;
+  coverSmallUrl: string;
+  coverMediumUrl: string;
+  coverLargeUrl: string;
+  coverUrlExpiresAt: Date;
 };
 
 const WORK_COLUMNS = {
@@ -31,7 +37,11 @@ const WORK_COLUMNS = {
   title: workEntity.title,
   slug: workEntity.slug,
   synopsis: workEntity.synopsis,
-  coverUrl: workEntity.coverUrl,
+  coverThumbUrl: workEntity.coverThumbUrl,
+  coverSmallUrl: workEntity.coverSmallUrl,
+  coverMediumUrl: workEntity.coverMediumUrl,
+  coverLargeUrl: workEntity.coverLargeUrl,
+  coverUrlExpiresAt: workEntity.coverUrlExpiresAt,
   createdAt: workEntity.createdAt,
   updatedAt: workEntity.updatedAt,
 };
@@ -59,10 +69,13 @@ export class WorksRepository {
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async updateCoverUrl(id: string, coverUrl: string): Promise<WorkEntity> {
+  async updateCoverUrls(
+    id: string,
+    urls: UpdateCoverUrls,
+  ): Promise<WorkEntity> {
     const [row] = await this.db
       .update(workEntity)
-      .set({ coverUrl, updatedAt: new Date() })
+      .set({ ...urls, updatedAt: new Date() })
       .where(eq(workEntity.id, id))
       .returning();
     return row;

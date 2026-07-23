@@ -17,7 +17,17 @@ export const workEntity = pgTable('works', {
   title: varchar('title', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 280 }).notNull().unique(),
   synopsis: text('synopsis'),
-  coverUrl: varchar('cover_url', { length: 500 }),
+  // Una URL por tamaño de variante, para que el caller elija cuál necesita
+  // (thumb en listados, large en detalle, etc). Las 4 se generan/suben
+  // juntas, así que comparten un único vencimiento de cache.
+  coverThumbUrl: varchar('cover_thumb_url', { length: 500 }),
+  coverSmallUrl: varchar('cover_small_url', { length: 500 }),
+  coverMediumUrl: varchar('cover_medium_url', { length: 500 }),
+  coverLargeUrl: varchar('cover_large_url', { length: 500 }),
+  // Cache de las signed URLs de Supabase: null = nunca se firmaron (o el
+  // bucket pasó a ser público, en cuyo caso deja de usarse). Al vencer, se
+  // vuelven a firmar de forma perezosa en la próxima lectura.
+  coverUrlExpiresAt: timestamp('cover_url_expires_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

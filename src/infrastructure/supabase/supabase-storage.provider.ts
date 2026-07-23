@@ -2,6 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_ADMIN_PROVIDER } from '@/common/constants';
+
+const SIGNED_URL_TTL_SECONDS = 60 * 60;
+
+export type SignedUrl = { url: string; expiresAt: Date };
+
 @Injectable()
 export class SupabaseStorageProvider {
   private readonly bucket: string;
@@ -44,15 +49,18 @@ export class SupabaseStorageProvider {
     return publicUrl;
   }
 
-  async getSignedUrl(path: string): Promise<string> {
+  async getSignedUrl(path: string): Promise<SignedUrl> {
     const { data, error } = await this.supabase.storage
       .from(this.bucket)
-      .createSignedUrl(path, 60 * 60);
+      .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
 
     if (error) {
       throw error;
     }
 
-    return data.signedUrl;
+    return {
+      url: data.signedUrl,
+      expiresAt: new Date(Date.now() + SIGNED_URL_TTL_SECONDS * 1000),
+    };
   }
 }

@@ -22,6 +22,13 @@
       "when": 1784748484878,
       "tag": "0002_blushing_redwing",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784769428067,
+      "tag": "0003_massive_anita_blake",
+      "breakpoints": true
     }
   ]
 }
