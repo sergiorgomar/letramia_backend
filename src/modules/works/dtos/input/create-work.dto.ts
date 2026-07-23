@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  // IsUrl,
-  IsUUID,
-  MaxLength,
-} from 'class-validator';
+import { IsString, IsOptional, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateWorkDto {
   @IsString()
@@ -19,9 +13,5 @@ export class CreateWorkDto {
 
   @IsString()
   @IsOptional()
-  synopsis?: string;
-
-  // @IsUrl()
-  // @IsOptional()
-  // coverUrl?: string;
+  synopsis: string;
 }

@@ -59,6 +59,16 @@ export class WorksRepository {
   }
 
   @HandleErrors('DATABASE_ERROR')
+  async updateCoverUrl(id: string, coverUrl: string): Promise<WorkEntity> {
+    const [row] = await this.db
+      .update(workEntity)
+      .set({ coverUrl, updatedAt: new Date() })
+      .where(eq(workEntity.id, id))
+      .returning();
+    return row;
+  }
+
+  @HandleErrors('DATABASE_ERROR')
   async findAllByUserId(userId: string): Promise<WorkEntity[]> {
     return this.db
       .select(WORK_COLUMNS)

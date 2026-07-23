@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '@/infrastructure/database/database.module';
 import { AuthModule } from '@/infrastructure/auth/auth.module';
 import { SupabaseModule } from '@/infrastructure/supabase/supabase.module';
+import { ImageModule } from '@/infrastructure/image/image.module';
 
 // Bussines modules
 import { SystemModule } from '@/modules/system/system.module';
@@ -18,6 +19,7 @@ import { AccountsModule } from '@/modules/accounts/accounts.module';
     DatabaseModule,
     AuthModule,
     SupabaseModule,
+    ImageModule,
 
     // bussines
     SystemModule,

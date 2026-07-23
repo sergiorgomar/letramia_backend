@@ -87,6 +87,13 @@ export const ERROR_CATALOG = {
     internalMessage:
       'La respuesta del controller no cumple con su DTO de salida',
   },
+  PAYLOAD_TOO_LARGE: {
+    code: 'APP-0002',
+    status: 413,
+    message: 'Su solicitud es demasiado grande, reduzca el tamaño de sus archivos.',
+    internalMessage:
+      'Body-parser o Multer rechazaron la request por exceder su límite de tamaño',
+  },
 
   // ── CUSTOM by module, service, etc.. ──────────────────────────────────────────
   ...WORKS_ERROR_CATALOG,

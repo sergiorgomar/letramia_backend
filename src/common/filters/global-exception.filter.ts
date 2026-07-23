@@ -30,17 +30,22 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
       const rawMessage = typeof res === 'string' ? res : res.message;
       const isValidation = status === 400 && Array.isArray(rawMessage);
+      const isPayloadTooLarge = status === 413;
 
       const body = new ApiErrorBody({
         message: isValidation
           ? 'Error de validación'
-          : typeof rawMessage === 'string'
-            ? rawMessage
-            : 'Error en la solicitud',
+          : isPayloadTooLarge
+            ? ERROR_CATALOG.PAYLOAD_TOO_LARGE.message
+            : typeof rawMessage === 'string'
+              ? rawMessage
+              : 'Error en la solicitud',
         error: {
           code: isValidation
             ? ERROR_CATALOG.VALIDATION_ERROR.code
-            : `HTTP-${status}`,
+            : isPayloadTooLarge
+              ? ERROR_CATALOG.PAYLOAD_TOO_LARGE.code
+              : `HTTP-${status}`,
           ...(Array.isArray(rawMessage) && { details: rawMessage }),
         },
         meta,

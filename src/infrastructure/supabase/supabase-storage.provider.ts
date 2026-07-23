@@ -2,10 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_ADMIN_PROVIDER } from '@/common/constants';
-import { StorageProvider, UploadedFile } from './storage-provider.interface';
-
 @Injectable()
-export class SupabaseStorageProvider implements StorageProvider {
+export class SupabaseStorageProvider {
   private readonly bucket: string;
 
   constructor(
@@ -15,11 +13,7 @@ export class SupabaseStorageProvider implements StorageProvider {
     this.bucket = configService.get<string>('SUPABASE_STORAGE_BUCKET')!;
   }
 
-  async upload(
-    path: string,
-    file: Buffer,
-    contentType: string,
-  ): Promise<UploadedFile> {
+  async upload(path: string, file: Buffer, contentType: string) {
     const { error } = await this.supabase.storage
       .from(this.bucket)
       .upload(path, file, { contentType, upsert: true });
@@ -29,8 +23,6 @@ export class SupabaseStorageProvider implements StorageProvider {
         `No se pudo subir el archivo a Supabase Storage: ${error.message}`,
       );
     }
-
-    return { path, url: this.getPublicUrl(path) };
   }
 
   async remove(path: string): Promise<void> {
@@ -50,5 +42,17 @@ export class SupabaseStorageProvider implements StorageProvider {
       data: { publicUrl },
     } = this.supabase.storage.from(this.bucket).getPublicUrl(path);
     return publicUrl;
+  }
+
+  async getSignedUrl(path: string): Promise<string> {
+    const { data, error } = await this.supabase.storage
+      .from(this.bucket)
+      .createSignedUrl(path, 60 * 60);
+
+    if (error) {
+      throw error;
+    }
+
+    return data.signedUrl;
   }
 }
