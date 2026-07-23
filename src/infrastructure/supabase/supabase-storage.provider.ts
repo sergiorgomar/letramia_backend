@@ -30,6 +30,20 @@ export class SupabaseStorageProvider {
     }
   }
 
+  // Descarga el archivo como texto. Devuelve null si el objeto no existe,
+  // para que el caller distinga "todavía no se subió" de un error real.
+  async downloadText(path: string): Promise<string | null> {
+    const { data, error } = await this.supabase.storage
+      .from(this.bucket)
+      .download(path);
+
+    if (error) {
+      return null;
+    }
+
+    return data.text();
+  }
+
   async remove(path: string): Promise<void> {
     const { error } = await this.supabase.storage
       .from(this.bucket)

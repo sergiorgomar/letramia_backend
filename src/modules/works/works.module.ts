@@ -8,9 +8,17 @@ import { WorkCategoriesRepository } from './repositories/work-categories.reposit
 import { WorkTypesController } from './controllers/work-types.controller';
 import { WorkTypesService } from './services/work-types.service';
 import { WorkTypesRepository } from './repositories/work-types.repository';
+import { WorkChaptersController } from './controllers/work-chapters.controller';
+import { WorkChaptersService } from './services/work-chapters.service';
+import { WorkChaptersRepository } from './repositories/work-chapters.repository';
 
 @Module({
-  controllers: [WorksController, WorkCategoriesController, WorkTypesController],
+  controllers: [
+    WorksController,
+    WorkCategoriesController,
+    WorkTypesController,
+    WorkChaptersController,
+  ],
   providers: [
     WorksService,
     WorksRepository,
@@ -18,6 +26,8 @@ import { WorkTypesRepository } from './repositories/work-types.repository';
     WorkCategoriesRepository,
     WorkTypesService,
     WorkTypesRepository,
+    WorkChaptersService,
+    WorkChaptersRepository,
   ],
 })
 export class WorksModule {}

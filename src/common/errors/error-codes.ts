@@ -1,4 +1,5 @@
 import { WORKS_ERROR_CATALOG } from './error-works-codes';
+import { WORK_CHAPTERS_ERROR_CATALOG } from './error-work-chapters-codes';
 
 export const ERROR_CATALOG = {
   // ── General ──────────────────────────────────────────
@@ -97,6 +98,7 @@ export const ERROR_CATALOG = {
 
   // ── CUSTOM by module, service, etc.. ──────────────────────────────────────────
   ...WORKS_ERROR_CATALOG,
+  ...WORK_CHAPTERS_ERROR_CATALOG,
 } as const;
 
 export type ErrorKey = keyof typeof ERROR_CATALOG;
