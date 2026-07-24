@@ -6,6 +6,7 @@ import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 import { userEntity } from '@/modules/accounts/entities/user.entity';
 import { workEntity } from '../entities/work.entity';
 import { workCategoryEntity } from '../entities/work-category.entity';
+import { workTypeEntity } from '../entities/work-type.entity';
 import { WorkStatus } from '../types/work-status.enum';
 
 export type WorkEntity = typeof workEntity.$inferSelect;
@@ -45,6 +46,8 @@ export type PublishedWorkEntity = {
   authorName: string;
   categoryId: string;
   categoryName: string;
+  typeId: string;
+  typeName: string;
   coverThumbUrl: string | null;
   coverSmallUrl: string | null;
   coverMediumUrl: string | null;
@@ -67,6 +70,8 @@ const PUBLISHED_WORK_COLUMNS = {
   authorName: userEntity.name,
   categoryId: workCategoryEntity.id,
   categoryName: workCategoryEntity.name,
+  typeId: workTypeEntity.id,
+  typeName: workTypeEntity.name,
   coverThumbUrl: workEntity.coverThumbUrl,
   coverSmallUrl: workEntity.coverSmallUrl,
   coverMediumUrl: workEntity.coverMediumUrl,
@@ -194,6 +199,7 @@ export class WorksRepository {
         workCategoryEntity,
         eq(workCategoryEntity.id, workEntity.workCategoryId),
       )
+      .innerJoin(workTypeEntity, eq(workTypeEntity.id, workEntity.workTypeId))
       .where(and(...conditions))
       .orderBy(
         filters.orderBy === 'alphabetical'
@@ -214,6 +220,7 @@ export class WorksRepository {
         workCategoryEntity,
         eq(workCategoryEntity.id, workEntity.workCategoryId),
       )
+      .innerJoin(workTypeEntity, eq(workTypeEntity.id, workEntity.workTypeId))
       .where(
         and(
           eq(workEntity.slug, slug),

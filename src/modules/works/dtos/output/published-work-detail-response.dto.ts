@@ -50,6 +50,12 @@ export class PublishedWorkDetailResponseDto {
   @IsString()
   categorySlug: string;
 
+  @IsUUID()
+  typeId: string;
+
+  @IsString()
+  typeName: string;
+
   @IsUrl()
   @IsOptional()
   coverUrl: string | null;

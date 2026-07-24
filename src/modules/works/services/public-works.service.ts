@@ -19,8 +19,19 @@ import { slugify } from '../utils/slugify';
 // para no arriesgarse a servir una URL que expira a mitad de un request.
 const COVER_URL_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
-// Las tarjetas del catálogo no necesitan la portada en alta resolución.
-const CATALOG_COVER_VARIANT = 'medium';
+type CoverVariant = 'thumb' | 'small' | 'medium' | 'large';
+
+// Las tarjetas del catálogo (grillas chicas) piden el thumbnail; la ficha de
+// detalle y el destacado del banner necesitan más resolución.
+const CATALOG_COVER_VARIANT: CoverVariant = 'thumb';
+const DETAIL_COVER_VARIANT: CoverVariant = 'medium';
+
+const CACHED_COVER_FIELD = {
+  thumb: 'coverThumbUrl',
+  small: 'coverSmallUrl',
+  medium: 'coverMediumUrl',
+  large: 'coverLargeUrl',
+} as const satisfies Record<CoverVariant, keyof PublishedWorkEntity>;
 
 @Injectable()
 export class PublicWorksService {
@@ -65,7 +76,9 @@ export class PublicWorksService {
           : 'recent',
     });
 
-    return Promise.all(works.map((work) => this.toPublishedWork(work)));
+    return Promise.all(
+      works.map((work) => this.toPublishedWork(work, CATALOG_COVER_VARIANT)),
+    );
   }
 
   async findPublishedBySlug(slug: string): Promise<PublishedWorkDetailResult> {
@@ -75,7 +88,7 @@ export class PublicWorksService {
     }
 
     const chapters = await this.workChaptersRepository.findAllByWorkId(work.id);
-    const base = await this.toPublishedWork(work);
+    const base = await this.toPublishedWork(work, DETAIL_COVER_VARIANT);
 
     return {
       ...base,
@@ -130,6 +143,7 @@ export class PublicWorksService {
   // vigente se reutiliza, y si venció se vuelve a firmar y se persiste.
   private async toPublishedWork(
     work: PublishedWorkEntity,
+    variant: CoverVariant,
   ): Promise<PublishedWorkResult> {
     return {
       id: work.id,
@@ -140,13 +154,16 @@ export class PublicWorksService {
       categoryId: work.categoryId,
       categoryName: work.categoryName,
       categorySlug: slugify(work.categoryName),
-      coverUrl: await this.resolveCoverUrl(work),
+      typeId: work.typeId,
+      typeName: work.typeName,
+      coverUrl: await this.resolveCoverUrl(work, variant),
       createdAt: work.createdAt,
     };
   }
 
   private async resolveCoverUrl(
     work: PublishedWorkEntity,
+    variant: CoverVariant,
   ): Promise<string | null> {
     if (!work.coverMediumUrl) return null;
 
@@ -154,7 +171,7 @@ export class PublicWorksService {
       work.coverUrlExpiresAt &&
       work.coverUrlExpiresAt.getTime() - COVER_URL_REFRESH_MARGIN_MS >
         Date.now();
-    if (stillValid) return work.coverMediumUrl;
+    if (stillValid) return work[CACHED_COVER_FIELD[variant]];
 
     const signed = await Promise.all(
       (['thumb', 'small', 'medium', 'large'] as const).map(async (name) => {
@@ -168,7 +185,7 @@ export class PublicWorksService {
 
     const urlByVariant = Object.fromEntries(
       signed.map(({ name, url }) => [name, url]),
-    ) as Record<'thumb' | 'small' | 'medium' | 'large', string>;
+    ) as Record<CoverVariant, string>;
 
     await this.worksRepository.updateCoverUrls(work.id, {
       coverThumbUrl: urlByVariant.thumb,
@@ -178,6 +195,6 @@ export class PublicWorksService {
       coverUrlExpiresAt: signed[0].expiresAt,
     });
 
-    return urlByVariant[CATALOG_COVER_VARIANT];
+    return urlByVariant[variant];
   }
 }

@@ -9,6 +9,8 @@ export type PublishedWorkDetailResult = {
   categoryId: string;
   categoryName: string;
   categorySlug: string;
+  typeId: string;
+  typeName: string;
   coverUrl: string | null;
   createdAt: Date;
   chapters: PublishedWorkChapterResult[];
