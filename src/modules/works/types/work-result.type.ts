@@ -9,6 +9,7 @@ export type WorkResult = {
   slug: string;
   synopsis: string | null;
   status: WorkStatus;
+  isPoem: boolean;
   coverUrl: string | null;
   createdAt: Date;
   updatedAt: Date;

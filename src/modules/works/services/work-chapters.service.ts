@@ -6,6 +6,7 @@ import {
   WorkChaptersRepository,
 } from '../repositories/work-chapters.repository';
 import { WorksRepository } from '../repositories/works.repository';
+import { WorkTypesRepository } from '../repositories/work-types.repository';
 import { CreateWorkChapter } from '../types/create-work-chapter.type';
 import { UpdateWorkChapter } from '../types/update-work-chapter.type';
 import { ReorderWorkChapters } from '../types/reorder-work-chapters.type';
@@ -20,11 +21,12 @@ export class WorkChaptersService {
   constructor(
     private readonly workChaptersRepository: WorkChaptersRepository,
     private readonly worksRepository: WorksRepository,
+    private readonly workTypesRepository: WorkTypesRepository,
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
   ) {}
 
   async findAll(workId: string, userId: string): Promise<WorkChapterResult[]> {
-    await this.assertWorkOwned(workId, userId);
+    await this.assertWorkOwned(workId, userId, true);
     const chapters = await this.workChaptersRepository.findAllByWorkId(workId);
     return chapters.map(toChapterResult);
   }
@@ -34,7 +36,7 @@ export class WorkChaptersService {
     chapterId: string,
     userId: string,
   ): Promise<WorkChapterContentResult> {
-    await this.assertWorkOwned(workId, userId);
+    await this.assertWorkOwned(workId, userId, true);
     const chapter = await this.getOwnedChapter(workId, chapterId);
 
     const content = await this.supabaseStorageProvider.downloadText(
@@ -68,7 +70,7 @@ export class WorkChaptersService {
     userId: string,
     dto: UpdateWorkChapter,
   ): Promise<WorkChapterResult> {
-    await this.assertWorkOwned(workId, userId);
+    await this.assertWorkOwned(workId, userId, true);
     const chapter = await this.getOwnedChapter(workId, chapterId);
 
     // Solo se revalida el slug si el título realmente cambió, para no
@@ -94,7 +96,7 @@ export class WorkChaptersService {
     userId: string,
     dto: ReorderWorkChapters,
   ): Promise<WorkChapterResult[]> {
-    await this.assertWorkOwned(workId, userId);
+    await this.assertWorkOwned(workId, userId, true);
 
     const chapters = await this.workChaptersRepository.findAllByWorkId(workId);
     const currentIds = new Set(chapters.map((chapter) => chapter.id));
@@ -128,7 +130,7 @@ export class WorkChaptersService {
     chapterId: string,
     userId: string,
   ): Promise<void> {
-    await this.assertWorkOwned(workId, userId);
+    await this.assertWorkOwned(workId, userId, true);
     await this.getOwnedChapter(workId, chapterId);
 
     // La fila es la fuente de verdad, así que va primero. El HTML se borra
@@ -152,7 +154,7 @@ export class WorkChaptersService {
     userId: string,
     file?: Express.Multer.File,
   ): Promise<WorkChapterResult> {
-    await this.assertWorkOwned(workId, userId);
+    await this.assertWorkOwned(workId, userId, true);
     const chapter = await this.getOwnedChapter(workId, chapterId);
 
     if (!file) {
@@ -183,9 +185,19 @@ export class WorkChaptersService {
 
   // Verifica que el libro exista y pertenezca al usuario. Cualquier operación
   // sobre capítulos pasa antes por acá.
-  private async assertWorkOwned(workId: string, userId: string): Promise<void> {
+  private async assertWorkOwned(
+    workId: string,
+    userId: string,
+    allowLegacyChapters = false,
+  ): Promise<void> {
     const work = await this.worksRepository.findByIdAndUserId(workId, userId);
     if (!work) {
+      throw new AppException('WORK_NOT_FOUND', { id: workId, userId });
+    }
+    const type = await this.workTypesRepository.findById(work.workTypeId);
+    const hasLegacyChapters = allowLegacyChapters &&
+      (await this.workChaptersRepository.findAllByWorkId(workId)).length > 0;
+    if (type?.name === 'Poema' && !hasLegacyChapters) {
       throw new AppException('WORK_NOT_FOUND', { id: workId, userId });
     }
   }

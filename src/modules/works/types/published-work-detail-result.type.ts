@@ -11,6 +11,8 @@ export type PublishedWorkDetailResult = {
   categorySlug: string;
   typeId: string;
   typeName: string;
+  isPoem: boolean;
+  content: string | null;
   coverUrl: string | null;
   createdAt: Date;
   chapters: PublishedWorkChapterResult[];

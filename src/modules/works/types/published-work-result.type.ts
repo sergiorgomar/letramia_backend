@@ -9,6 +9,7 @@ export type PublishedWorkResult = {
   categorySlug: string;
   typeId: string;
   typeName: string;
+  isPoem: boolean;
   coverUrl: string | null;
   createdAt: Date;
 };

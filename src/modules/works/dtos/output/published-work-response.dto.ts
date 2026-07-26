@@ -1,4 +1,4 @@
-import { IsDate, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
+import { IsBoolean, IsDate, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
 
 export class PublishedWorkResponseDto {
   @IsUUID()
@@ -31,6 +31,9 @@ export class PublishedWorkResponseDto {
 
   @IsString()
   typeName: string;
+
+  @IsBoolean()
+  isPoem: boolean;
 
   @IsUrl()
   @IsOptional()

@@ -7,6 +7,7 @@ import {
   IsString,
   IsUrl,
   IsUUID,
+  IsBoolean,
   ValidateNested,
 } from 'class-validator';
 
@@ -55,6 +56,13 @@ export class PublishedWorkDetailResponseDto {
 
   @IsString()
   typeName: string;
+
+  @IsBoolean()
+  isPoem: boolean;
+
+  @IsString()
+  @IsOptional()
+  content: string | null;
 
   @IsUrl()
   @IsOptional()

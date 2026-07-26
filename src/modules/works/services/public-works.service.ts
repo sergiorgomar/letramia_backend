@@ -89,9 +89,15 @@ export class PublicWorksService {
 
     const chapters = await this.workChaptersRepository.findAllByWorkId(work.id);
     const base = await this.toPublishedWork(work, DETAIL_COVER_VARIANT);
+    const isPoem = base.isPoem && chapters.length === 0;
+    const content = isPoem
+      ? await this.supabaseStorageProvider.downloadText(`works/${work.id}/poem.html`)
+      : null;
 
     return {
       ...base,
+      isPoem,
+      content,
       chapters: chapters.map((chapter) => ({
         id: chapter.id,
         title: chapter.title,
@@ -108,6 +114,9 @@ export class PublicWorksService {
     const work = await this.worksRepository.findPublishedBySlug(workSlug);
     if (!work) {
       throw new AppException('PUBLISHED_WORK_NOT_FOUND', { slug: workSlug });
+    }
+    if (work.typeName === 'Poema') {
+      throw new AppException('PUBLISHED_CHAPTER_NOT_FOUND', { workSlug, chapterSlug });
     }
 
     const chapter = await this.workChaptersRepository.findByWorkIdAndSlug(
@@ -156,6 +165,7 @@ export class PublicWorksService {
       categorySlug: slugify(work.categoryName),
       typeId: work.typeId,
       typeName: work.typeName,
+      isPoem: work.typeName === 'Poema',
       coverUrl: await this.resolveCoverUrl(work, variant),
       createdAt: work.createdAt,
     };

@@ -5,6 +5,7 @@ import {
   IsString,
   IsUrl,
   IsUUID,
+  IsBoolean,
 } from 'class-validator';
 import { WorkStatus } from '../../types/work-status.enum';
 
@@ -30,6 +31,9 @@ export class WorkResponseDto {
 
   @IsEnum(WorkStatus)
   status: WorkStatus;
+
+  @IsBoolean()
+  isPoem: boolean;
 
   @IsUrl()
   @IsOptional()

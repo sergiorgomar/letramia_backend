@@ -88,7 +88,7 @@ export class WorksService {
     coverVariant: ImageVariantName,
   ): Promise<WorkResult> {
     if (!work.coverMediumUrl) {
-      return toWorkResult(work, coverVariant);
+      return this.toWorkResult(work, coverVariant);
     }
 
     const stillValid =
@@ -96,11 +96,11 @@ export class WorksService {
       work.coverUrlExpiresAt.getTime() - COVER_URL_REFRESH_MARGIN_MS >
         Date.now();
     if (stillValid) {
-      return toWorkResult(work, coverVariant);
+      return this.toWorkResult(work, coverVariant);
     }
 
     const refreshed = await this.refreshCoverUrls(work.id);
-    return toWorkResult(refreshed, coverVariant);
+    return this.toWorkResult(refreshed, coverVariant);
   }
 
   // Firma las 4 variantes de portada y persiste las URLs + el vencimiento
@@ -138,10 +138,8 @@ export class WorksService {
       });
     }
 
-    const typeExists = await this.workTypesRepository.existsById(
-      dto.workTypeId,
-    );
-    if (!typeExists) {
+    const type = await this.workTypesRepository.findById(dto.workTypeId);
+    if (!type) {
       throw new AppException('WORK_TYPE_NOT_FOUND', {
         workTypeId: dto.workTypeId,
       });
@@ -149,7 +147,7 @@ export class WorksService {
 
     const slug = await this.resolveUniqueSlug(dto.title);
 
-    return this.worksRepository.create({ ...dto, slug });
+    return this.worksRepository.create({ ...dto, synopsis: type.name === 'Poema' ? null : dto.synopsis, slug });
   }
 
   async update(
@@ -171,10 +169,8 @@ export class WorksService {
       });
     }
 
-    const typeExists = await this.workTypesRepository.existsById(
-      dto.workTypeId,
-    );
-    if (!typeExists) {
+    const type = await this.workTypesRepository.findById(dto.workTypeId);
+    if (!type) {
       throw new AppException('WORK_TYPE_NOT_FOUND', {
         workTypeId: dto.workTypeId,
       });
@@ -187,8 +183,8 @@ export class WorksService {
         ? work.slug
         : await this.resolveUniqueSlug(dto.title, id);
 
-    const updated = await this.worksRepository.update(id, { ...dto, slug });
-    return toWorkResult(updated, DEFAULT_COVER_VARIANT);
+    const updated = await this.worksRepository.update(id, { ...dto, synopsis: type.name === 'Poema' ? null : dto.synopsis, slug });
+    return this.toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 
   // Publicar / despublicar. El estado es lo único que decide si la obra se
@@ -208,7 +204,7 @@ export class WorksService {
       status: dto.status,
     });
 
-    return toWorkResult(updated, DEFAULT_COVER_VARIANT);
+    return this.toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 
   async updateCover(
@@ -274,7 +270,7 @@ export class WorksService {
     // token de la signed URL rompe cachés de navegador/CDN sobre la misma
     // ruta (el path no cambia por el upsert, pero el token sí).
     const updated = await this.refreshCoverUrls(id);
-    return toWorkResult(updated, DEFAULT_COVER_VARIANT);
+    return this.toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 
   async delete(id: string, userId: string): Promise<void> {
@@ -287,12 +283,38 @@ export class WorksService {
     const storagePaths = [
       ...IMAGE_VARIANT_NAMES.map((name) => `works/${id}/cover/${name}.webp`),
       ...chapters.map((chapter) => `works/${id}/chapters/${chapter.id}.html`),
+      `works/${id}/poem.html`,
     ];
 
     // Primero se limpia Storage. Si este paso falla, la obra queda intacta y
     // el usuario puede volver a intentar el borrado sin perder sus datos.
     await this.supabaseStorageProvider.remove(storagePaths);
     await this.worksRepository.deleteWithChapters(id);
+  }
+
+  async getContent(id: string, userId: string): Promise<{ content: string | null }> {
+    await this.assertPoemOwned(id, userId);
+    return { content: await this.supabaseStorageProvider.downloadText(`works/${id}/poem.html`) };
+  }
+
+  async uploadContent(id: string, userId: string, file?: Express.Multer.File): Promise<{ content: string | null }> {
+    await this.assertPoemOwned(id, userId);
+    if (!file) throw new AppException('WORK_COVER_FILE_MISSING', { id, userId });
+    if (file.mimetype !== 'text/html') throw new AppException('WORK_COVER_UNSUPPORTED_TYPE', { id, userId, mimetype: file.mimetype });
+    await this.supabaseStorageProvider.upload(`works/${id}/poem.html`, file.buffer, 'text/html');
+    return { content: await this.supabaseStorageProvider.downloadText(`works/${id}/poem.html`) };
+  }
+
+  private async assertPoemOwned(id: string, userId: string): Promise<void> {
+    const work = await this.worksRepository.findByIdAndUserId(id, userId);
+    const type = work && await this.workTypesRepository.findById(work.workTypeId);
+    if (!work || !type || type.name !== 'Poema') throw new AppException('WORK_NOT_FOUND', { id, userId });
+  }
+
+  private async toWorkResult(work: WorkEntity, coverVariant: ImageVariantName): Promise<WorkResult> {
+    const type = await this.workTypesRepository.findById(work.workTypeId);
+    const chapters = await this.workChaptersRepository.findAllByWorkId(work.id);
+    return toWorkResult(work, coverVariant, type?.name === 'Poema' && chapters.length === 0);
   }
 
   private async resolveUniqueSlug(
@@ -325,6 +347,7 @@ export class WorksService {
 function toWorkResult(
   work: WorkEntity,
   coverVariant: ImageVariantName,
+  isPoem: boolean,
 ): WorkResult {
   const { coverThumbUrl, coverSmallUrl, coverMediumUrl, coverLargeUrl, ...rest } =
     work;
@@ -333,5 +356,6 @@ function toWorkResult(
   return {
     ...rest,
     coverUrl: byVariant[COVER_VARIANT_COLUMN[coverVariant]],
+    isPoem,
   };
 }

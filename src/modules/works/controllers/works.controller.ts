@@ -23,6 +23,7 @@ import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
 import { CurrentUser } from '@/infrastructure/auth/decorators/current-user.decorator';
 
 const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_CONTENT_SIZE_BYTES = 5 * 1024 * 1024;
 
 @Controller('works')
 export class WorksController {
@@ -83,6 +84,17 @@ export class WorksController {
     @CurrentUser() user: RequestUser,
   ) {
     return this.worksService.updateCover(id, user.id, file);
+  }
+
+  @Get(':id/content')
+  getContent(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: RequestUser) {
+    return this.worksService.getContent(id, user.id);
+  }
+
+  @Post(':id/content')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_CONTENT_SIZE_BYTES } }))
+  uploadContent(@Param('id', ParseUUIDPipe) id: string, @UploadedFile() file: Request['file'], @CurrentUser() user: RequestUser) {
+    return this.worksService.uploadContent(id, user.id, file);
   }
 
   @Delete(':id')

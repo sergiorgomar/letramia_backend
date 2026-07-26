@@ -43,4 +43,10 @@ export class WorkTypesRepository {
       .limit(1);
     return !!row;
   }
+
+  @HandleErrors('DATABASE_ERROR')
+  async findById(id: string): Promise<WorkTypeEntity | undefined> {
+    const [row] = await this.db.select().from(workTypeEntity).where(eq(workTypeEntity.id, id)).limit(1);
+    return row;
+  }
 }
