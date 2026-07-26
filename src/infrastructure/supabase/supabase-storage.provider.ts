@@ -44,10 +44,13 @@ export class SupabaseStorageProvider {
     return data.text();
   }
 
-  async remove(path: string): Promise<void> {
+  async remove(paths: string | string[]): Promise<void> {
+    const objects = Array.isArray(paths) ? paths : [paths];
+    if (objects.length === 0) return;
+
     const { error } = await this.supabase.storage
       .from(this.bucket)
-      .remove([path]);
+      .remove(objects);
 
     if (error) {
       throw new Error(

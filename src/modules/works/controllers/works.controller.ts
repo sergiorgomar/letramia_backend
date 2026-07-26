@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   ParseUUIDPipe,
@@ -17,6 +18,7 @@ import { CreateWorkDto } from '../dtos/input/create-work.dto';
 import { UpdateWorkStatusDto } from '../dtos/input/update-work-status.dto';
 import { WorkResponseDto } from '../dtos/output/work-response.dto';
 import { CreateWorkResponseDto } from '../dtos/output/create-work-response.dto';
+import { DeleteWorkResponseDto } from '../dtos/output/delete-work-response.dto';
 import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
 import { CurrentUser } from '@/infrastructure/auth/decorators/current-user.decorator';
 
@@ -81,5 +83,15 @@ export class WorksController {
     @CurrentUser() user: RequestUser,
   ) {
     return this.worksService.updateCover(id, user.id, file);
+  }
+
+  @Delete(':id')
+  @ResponseDto(DeleteWorkResponseDto, 'Obra eliminada con éxito')
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    await this.worksService.delete(id, user.id);
+    return { id };
   }
 }

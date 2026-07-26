@@ -7,6 +7,7 @@ import { userEntity } from '@/modules/accounts/entities/user.entity';
 import { workEntity } from '../entities/work.entity';
 import { workCategoryEntity } from '../entities/work-category.entity';
 import { workTypeEntity } from '../entities/work-type.entity';
+import { workChapterEntity } from '../entities/work-chapter.entity';
 import { WorkStatus } from '../types/work-status.enum';
 
 export type WorkEntity = typeof workEntity.$inferSelect;
@@ -145,6 +146,18 @@ export class WorksRepository {
       .where(eq(workEntity.id, id))
       .returning();
     return row;
+  }
+
+  // El libro y sus capítulos son una única unidad al eliminarse. La
+  // transacción evita dejar capítulos huérfanos si falla el segundo delete.
+  @HandleErrors('DATABASE_ERROR')
+  async deleteWithChapters(id: string): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(workChapterEntity)
+        .where(eq(workChapterEntity.workId, id));
+      await tx.delete(workEntity).where(eq(workEntity.id, id));
+    });
   }
 
   @HandleErrors('DATABASE_ERROR')

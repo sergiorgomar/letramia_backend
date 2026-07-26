@@ -6,12 +6,10 @@ import {
   ImageVariantName,
   IMAGE_VARIANT_NAMES,
 } from '@/infrastructure/image/image-processor.service';
-import {
-  WorkEntity,
-  WorksRepository,
-} from '../repositories/works.repository';
+import { WorkEntity, WorksRepository } from '../repositories/works.repository';
 import { WorkCategoriesRepository } from '../repositories/work-categories.repository';
 import { WorkTypesRepository } from '../repositories/work-types.repository';
+import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
 import { CreateWork } from '../types/create-work.type';
 import { CreateWorkResult } from '../types/create-work-result.type';
 import { UpdateWork } from '../types/update-work.type';
@@ -54,6 +52,7 @@ export class WorksService {
     private readonly worksRepository: WorksRepository,
     private readonly workCategoriesRepository: WorkCategoriesRepository,
     private readonly workTypesRepository: WorkTypesRepository,
+    private readonly workChaptersRepository: WorkChaptersRepository,
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
     private readonly imageProcessorService: ImageProcessorService,
   ) {}
@@ -276,6 +275,24 @@ export class WorksService {
     // ruta (el path no cambia por el upsert, pero el token sí).
     const updated = await this.refreshCoverUrls(id);
     return toWorkResult(updated, DEFAULT_COVER_VARIANT);
+  }
+
+  async delete(id: string, userId: string): Promise<void> {
+    const work = await this.worksRepository.findByIdAndUserId(id, userId);
+    if (!work) {
+      throw new AppException('WORK_NOT_FOUND', { id, userId });
+    }
+
+    const chapters = await this.workChaptersRepository.findAllByWorkId(id);
+    const storagePaths = [
+      ...IMAGE_VARIANT_NAMES.map((name) => `works/${id}/cover/${name}.webp`),
+      ...chapters.map((chapter) => `works/${id}/chapters/${chapter.id}.html`),
+    ];
+
+    // Primero se limpia Storage. Si este paso falla, la obra queda intacta y
+    // el usuario puede volver a intentar el borrado sin perder sus datos.
+    await this.supabaseStorageProvider.remove(storagePaths);
+    await this.worksRepository.deleteWithChapters(id);
   }
 
   private async resolveUniqueSlug(

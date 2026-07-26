@@ -25,12 +25,12 @@ import { PublicWorksService } from './services/public-works.service';
   providers: [
     WorksService,
     WorksRepository,
+    WorkChaptersRepository,
     WorkCategoriesService,
     WorkCategoriesRepository,
     WorkTypesService,
     WorkTypesRepository,
     WorkChaptersService,
-    WorkChaptersRepository,
     PublicWorksService,
   ],
 })
