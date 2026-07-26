@@ -10,6 +10,10 @@ export class ListPublishedWorksDto {
   @IsOptional()
   categorySlug?: string;
 
+  @IsString()
+  @IsOptional()
+  typeSlug?: string;
+
   @IsEnum(PublishedWorkSort)
   @IsOptional()
   sort?: PublishedWorkSort;

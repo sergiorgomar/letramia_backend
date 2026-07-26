@@ -7,6 +7,7 @@ import {
 } from '../repositories/works.repository';
 import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
 import { WorkCategoriesRepository } from '../repositories/work-categories.repository';
+import { WorkTypesRepository } from '../repositories/work-types.repository';
 import { ListPublishedWorks } from '../types/list-published-works.type';
 import { PublishedWorkSort } from '../types/published-work-sort.enum';
 import { PublishedWorkResult } from '../types/published-work-result.type';
@@ -39,6 +40,7 @@ export class PublicWorksService {
     private readonly worksRepository: WorksRepository,
     private readonly workChaptersRepository: WorkChaptersRepository,
     private readonly workCategoriesRepository: WorkCategoriesRepository,
+    private readonly workTypesRepository: WorkTypesRepository,
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
   ) {}
 
@@ -55,10 +57,16 @@ export class PublicWorksService {
     }));
   }
 
+  async findAllTypes(): Promise<PublishedCategoryResult[]> {
+    const types = await this.workTypesRepository.findAll();
+    return types.map((type) => ({ id: type.id, name: type.name, slug: slugify(type.name) }));
+  }
+
   async findAllPublished(
     filters: ListPublishedWorks,
   ): Promise<PublishedWorkResult[]> {
     let categoryId: string | undefined;
+    let typeId: string | undefined;
 
     if (filters.categorySlug) {
       const category = await this.findCategoryBySlug(filters.categorySlug);
@@ -66,9 +74,15 @@ export class PublicWorksService {
       if (!category) return [];
       categoryId = category.id;
     }
+    if (filters.typeSlug) {
+      const type = (await this.findAllTypes()).find((item) => item.slug === filters.typeSlug);
+      if (!type) return [];
+      typeId = type.id;
+    }
 
     const works = await this.worksRepository.findAllPublished({
       categoryId,
+      typeId,
       search: filters.search,
       orderBy:
         filters.sort === PublishedWorkSort.ALPHABETICAL

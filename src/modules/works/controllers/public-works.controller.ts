@@ -20,6 +20,12 @@ export class PublicWorksController {
     return this.publicWorksService.findAllCategories();
   }
 
+  @Get('work-types')
+  @ResponseDto(PublishedCategoryResponseDto, 'Tipos obtenidos con éxito')
+  findAllTypes() {
+    return this.publicWorksService.findAllTypes();
+  }
+
   @Get('works')
   @ResponseDto(PublishedWorkResponseDto, 'Obras obtenidas con éxito')
   findAll(@Query() query: ListPublishedWorksDto) {

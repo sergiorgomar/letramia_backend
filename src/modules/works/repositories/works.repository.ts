@@ -59,6 +59,7 @@ export type PublishedWorkEntity = {
 };
 export type FindPublishedWorksEntity = {
   categoryId?: string;
+  typeId?: string;
   search?: string;
   orderBy: 'recent' | 'alphabetical';
 };
@@ -195,6 +196,7 @@ export class WorksRepository {
     if (filters.categoryId) {
       conditions.push(eq(workEntity.workCategoryId, filters.categoryId));
     }
+    if (filters.typeId) conditions.push(eq(workEntity.workTypeId, filters.typeId));
 
     if (filters.search) {
       // ilike = case-insensitive; busca por título o por nombre del autor.
