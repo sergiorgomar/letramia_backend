@@ -38,4 +38,10 @@ export const WORKS_ERROR_CATALOG = {
     internalMessage:
       'El ratio ancho/alto de la imagen está fuera del rango permitido para portadas',
   },
+  WORK_CANNOT_PUBLISH_WITHOUT_CONTENT: {
+    code: 'WORK-0007',
+    status: 400,
+    message: 'Agrega contenido a la obra antes de publicarla.',
+    internalMessage: 'La obra no tiene capítulos o el poema no tiene poem.html',
+  },
 } as const;

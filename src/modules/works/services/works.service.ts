@@ -16,6 +16,7 @@ import { UpdateWork } from '../types/update-work.type';
 import { UpdateWorkStatus } from '../types/update-work-status.type';
 import { WorkResult } from '../types/work-result.type';
 import { slugify } from '../utils/slugify';
+import { WorkStatus } from '../types/work-status.enum';
 
 const SUFFIX_PATTERN = /-(\d+)$/;
 
@@ -198,6 +199,18 @@ export class WorksService {
     const work = await this.worksRepository.findByIdAndUserId(id, userId);
     if (!work) {
       throw new AppException('WORK_NOT_FOUND', { id, userId });
+    }
+
+    if (dto.status === WorkStatus.PUBLISHED) {
+      const type = await this.workTypesRepository.findById(work.workTypeId);
+      const isPoem = type?.name === 'Poema';
+      const hasContent = isPoem
+        ? Boolean((await this.supabaseStorageProvider.downloadText(`works/${id}/poem.html`))?.trim())
+        : (await this.workChaptersRepository.findAllByWorkId(id)).length > 0;
+
+      if (!hasContent) {
+        throw new AppException('WORK_CANNOT_PUBLISH_WITHOUT_CONTENT', { id, userId, isPoem });
+      }
     }
 
     const updated = await this.worksRepository.updateStatus(id, {
