@@ -63,6 +63,8 @@ export type FindPublishedWorksEntity = {
   search?: string;
   orderBy: 'recent' | 'alphabetical';
 };
+export type SitemapWorkEntity = { slug: string; updatedAt: Date };
+export type SitemapChapterEntity = { workSlug: string; chapterSlug: string; updatedAt: Date };
 
 const PUBLISHED_WORK_COLUMNS = {
   id: workEntity.id,
@@ -244,6 +246,20 @@ export class WorksRepository {
       )
       .limit(1);
     return row;
+  }
+
+  @HandleErrors('DATABASE_ERROR')
+  async findSitemapWorks(): Promise<SitemapWorkEntity[]> {
+    return this.db.select({ slug: workEntity.slug, updatedAt: workEntity.updatedAt })
+      .from(workEntity).where(eq(workEntity.status, WorkStatus.PUBLISHED));
+  }
+
+  @HandleErrors('DATABASE_ERROR')
+  async findSitemapChapters(): Promise<SitemapChapterEntity[]> {
+    return this.db.select({ workSlug: workEntity.slug, chapterSlug: workChapterEntity.slug, updatedAt: workChapterEntity.updatedAt })
+      .from(workChapterEntity).innerJoin(workEntity, eq(workEntity.id, workChapterEntity.workId))
+      .innerJoin(workTypeEntity, eq(workTypeEntity.id, workEntity.workTypeId))
+      .where(and(eq(workEntity.status, WorkStatus.PUBLISHED), ne(workTypeEntity.name, 'Poema')));
   }
 
   // Trae solo los slugs que puedan colisionar con `baseSlug` (el propio y sus

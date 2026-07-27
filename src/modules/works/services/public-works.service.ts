@@ -15,6 +15,7 @@ import { PublishedWorkDetailResult } from '../types/published-work-detail-result
 import { PublishedChapterContentResult } from '../types/published-chapter-content-result.type';
 import { PublishedCategoryResult } from '../types/published-category-result.type';
 import { slugify } from '../utils/slugify';
+import { ConfigService } from '@nestjs/config';
 
 // Margen de seguridad: se re-firma un poco antes de que venza de verdad,
 // para no arriesgarse a servir una URL que expira a mitad de un request.
@@ -42,7 +43,41 @@ export class PublicWorksService {
     private readonly workCategoriesRepository: WorkCategoriesRepository,
     private readonly workTypesRepository: WorkTypesRepository,
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
+    private readonly configService: ConfigService,
   ) {}
+
+  async buildSitemap(): Promise<string> {
+    const [works, chapters, categories, types] = await Promise.all([
+      this.worksRepository.findSitemapWorks(),
+      this.worksRepository.findSitemapChapters(),
+      this.findAllCategories(),
+      this.findAllTypes(),
+    ]);
+    const baseUrl = 'https://letramia.com';
+    const entries: { path: string; lastModified?: Date }[] = [
+      { path: '/' },
+      { path: '/categoria/todos' },
+      ...works.map((work) => ({
+        path: `/${work.slug}`,
+        lastModified: work.updatedAt,
+      })),
+      ...chapters.map((chapter) => ({
+        path: `/${chapter.workSlug}/${chapter.chapterSlug}`,
+        lastModified: chapter.updatedAt,
+      })),
+      ...categories.map((category) => ({
+        path: `/categoria/${category.slug}`,
+      })),
+      ...types.map((type) => ({ path: `/tipo-obra/${type.slug}` })),
+    ];
+
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries
+      .map(
+        (entry) =>
+          `\n  <url><loc>${escapeXml(`${baseUrl}${entry.path}`)}</loc>${entry.lastModified ? `<lastmod>${entry.lastModified.toISOString()}</lastmod>` : ''}</url>`,
+      )
+      .join('')}\n</urlset>`;
+  }
 
   // Las categorías no tienen columna slug: se deriva del nombre. Es un
   // catálogo chico y curado, así que alcanza para tener URLs legibles sin
@@ -221,4 +256,13 @@ export class PublicWorksService {
 
     return urlByVariant[variant];
   }
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
 }

@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ResponseDto } from '@/common/decorators/response-dto.decorator';
 import { Public } from '@/infrastructure/auth/decorators/public.decorator';
 import { PublicWorksService } from '../services/public-works.service';
@@ -24,6 +25,14 @@ export class PublicWorksController {
   @ResponseDto(PublishedCategoryResponseDto, 'Tipos obtenidos con éxito')
   findAllTypes() {
     return this.publicWorksService.findAllTypes();
+  }
+
+  @Get('sitemap.xml')
+  async sitemap(@Res() response: Response) {
+    const xml = await this.publicWorksService.buildSitemap();
+    response.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    response.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600');
+    response.send(xml);
   }
 
   @Get('works')
