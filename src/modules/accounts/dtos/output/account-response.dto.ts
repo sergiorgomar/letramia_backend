@@ -1,5 +1,4 @@
-import { IsEmail, IsEnum, IsUUID } from 'class-validator';
-import { UserType } from '@/infrastructure/auth/types/user-type.enum';
+import { IsUUID } from 'class-validator';
 
 export class AccountResponseDto {
   @IsUUID()

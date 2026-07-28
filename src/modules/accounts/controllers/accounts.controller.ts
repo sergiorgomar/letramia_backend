@@ -18,6 +18,8 @@ import { RefreshTokenDto } from '../dtos/input/refresh-token.dto';
 import { LoginResponseDto } from '../dtos/output/login-response.dto';
 import { MeResponseDto } from '../dtos/output/me-response.dto';
 
+// 🔥🔥 proteger el controller con un middleware contra ataques de fuerza bruta
+// 🔥🔥 proteger el controller con un captcha de que no son robots
 @Controller('accounts')
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}

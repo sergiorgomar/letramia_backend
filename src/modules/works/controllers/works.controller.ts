@@ -87,13 +87,22 @@ export class WorksController {
   }
 
   @Get(':id/content')
-  getContent(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: RequestUser) {
+  getContent(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.worksService.getContent(id, user.id);
   }
 
   @Post(':id/content')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_CONTENT_SIZE_BYTES } }))
-  uploadContent(@Param('id', ParseUUIDPipe) id: string, @UploadedFile() file: Request['file'], @CurrentUser() user: RequestUser) {
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_CONTENT_SIZE_BYTES } }),
+  )
+  uploadContent(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Request['file'],
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.worksService.uploadContent(id, user.id, file);
   }
 

@@ -27,7 +27,13 @@ export interface ImageVariant {
 
 @Injectable()
 export class ImageProcessorService {
-  async getDimensions(input: Buffer): Promise<{ width: number; height: number }> {
+  COVER_MIN_ASPECT_RATIO = 0.6;
+  COVER_MAX_ASPECT_RATIO = 0.8;
+  COVER_ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+  async getDimensions(
+    input: Buffer,
+  ): Promise<{ width: number; height: number }> {
     const { width, height } = await sharp(input).metadata();
     if (!width || !height) {
       throw new Error('No se pudieron leer las dimensiones de la imagen');
@@ -35,7 +41,12 @@ export class ImageProcessorService {
     return { width, height };
   }
 
-  async generateVariants(
+  async getAspectRatio(input: Buffer): Promise<number> {
+    const { width, height } = await this.getDimensions(input);
+    return width / height;
+  }
+
+  async generateCoverVariants(
     input: Buffer,
   ): Promise<Record<ImageVariantName, ImageVariant>> {
     const entries = await Promise.all(
@@ -55,6 +66,20 @@ export class ImageProcessorService {
       }),
     );
 
-    return Object.fromEntries(entries) as Record<ImageVariantName, ImageVariant>;
+    return Object.fromEntries(entries) as Record<
+      ImageVariantName,
+      ImageVariant
+    >;
+  }
+
+  isValidWorkCoverAspectRatio(aspectRatio: number): boolean {
+    return (
+      aspectRatio <= this.COVER_MIN_ASPECT_RATIO ||
+      aspectRatio >= this.COVER_MAX_ASPECT_RATIO
+    );
+  }
+
+  isValidWorkCoverMimeType(mimetype: string): boolean {
+    return this.COVER_ALLOWED_MIME_TYPES.has(mimetype);
   }
 }

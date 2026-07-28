@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AppException } from '@/common/exceptions/app.exception';
+import { PRIVATE_STORAGE } from '@/common/constants';
 import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-storage.provider';
 import {
   ImageProcessorService,
@@ -54,6 +55,7 @@ export class WorksService {
     private readonly workThemesRepository: WorkThemesRepository,
     private readonly workGenresRepository: WorkGenresRepository,
     private readonly workChaptersRepository: WorkChaptersRepository,
+    @Inject(PRIVATE_STORAGE)
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
     private readonly imageProcessorService: ImageProcessorService,
   ) {}
@@ -125,7 +127,7 @@ export class WorksService {
       coverSmallUrl: urlByVariant.small,
       coverMediumUrl: urlByVariant.medium,
       coverLargeUrl: urlByVariant.large,
-      coverUrlExpiresAt: signed[0].expiresAt,
+      //coverUrlExpiresAt: signed[0].expiresAt,
     });
   }
 
@@ -259,7 +261,7 @@ export class WorksService {
       });
     }
 
-    const variants = await this.imageProcessorService.generateVariants(
+    const variants = await this.imageProcessorService.generateCoverVariants(
       file.buffer,
     );
 

@@ -39,6 +39,12 @@ export const workEntity = pgTable('works', {
   coverSmallUrl: varchar('cover_small_url', { length: 500 }),
   coverMediumUrl: varchar('cover_medium_url', { length: 500 }),
   coverLargeUrl: varchar('cover_large_url', { length: 500 }),
+
+  //🔥 TODO: GUARDAR MEJOR EL PATH
+  // coverThumbPath: varchar('cover_thumb_path', { length: 500 }),
+  // coverSmallPath: varchar('cover_small_path', { length: 500 }),
+  // coverMediumPath: varchar('cover_medium_path', { length: 500 }),
+  // coverLargePath: varchar('cover_large_path', { length: 500 }),
   // Cache de las signed URLs de Supabase: null = nunca se firmaron (o el
   // bucket pasó a ser público, en cuyo caso deja de usarse). Al vencer, se
   // vuelven a firmar de forma perezosa en la próxima lectura.

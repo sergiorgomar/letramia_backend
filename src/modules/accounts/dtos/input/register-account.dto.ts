@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MinLength, IsEnum, ArrayNotEmpty } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsEnum,
+  ArrayNotEmpty,
+} from 'class-validator';
 import { UserType } from '@/infrastructure/auth/types/user-type.enum';
 
 export class RegisterAccountDto {

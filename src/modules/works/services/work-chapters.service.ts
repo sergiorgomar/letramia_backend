@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AppException } from '@/common/exceptions/app.exception';
+import { PRIVATE_STORAGE } from '@/common/constants';
 import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-storage.provider';
 import {
   WorkChapterEntity,
@@ -22,6 +23,7 @@ export class WorkChaptersService {
     private readonly workChaptersRepository: WorkChaptersRepository,
     private readonly worksRepository: WorksRepository,
     private readonly workGenresRepository: WorkGenresRepository,
+    @Inject(PRIVATE_STORAGE)
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
   ) {}
 

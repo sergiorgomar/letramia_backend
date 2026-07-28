@@ -33,5 +33,6 @@ import { PublicWorksService } from './services/public-works.service';
     WorkChaptersService,
     PublicWorksService,
   ],
+  exports: [WorksRepository, WorkGenresRepository, WorkChaptersRepository],
 })
 export class WorksModule {}

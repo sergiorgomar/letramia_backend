@@ -34,7 +34,6 @@ export type UpdateCoverUrls = {
   coverSmallUrl: string;
   coverMediumUrl: string;
   coverLargeUrl: string;
-  coverUrlExpiresAt: Date;
 };
 
 // Catálogo público: la fila ya viene con autor y categoría resueltos, para no
@@ -64,7 +63,11 @@ export type FindPublishedWorksEntity = {
   orderBy: 'recent' | 'alphabetical';
 };
 export type SitemapWorkEntity = { slug: string; updatedAt: Date };
-export type SitemapChapterEntity = { workSlug: string; chapterSlug: string; updatedAt: Date };
+export type SitemapChapterEntity = {
+  workSlug: string;
+  chapterSlug: string;
+  updatedAt: Date;
+};
 
 const PUBLISHED_WORK_COLUMNS = {
   id: workEntity.id,

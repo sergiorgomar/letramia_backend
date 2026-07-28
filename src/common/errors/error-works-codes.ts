@@ -44,4 +44,58 @@ export const WORKS_ERROR_CATALOG = {
     message: 'Agrega contenido a la obra antes de publicarla.',
     internalMessage: 'La obra no tiene capítulos o el poema no tiene poem.html',
   },
+  WORK_CONTENT_FILE_MISSING: {
+    code: 'WORK-0008',
+    status: 400,
+    message: 'No se ha agregado contenido.',
+    internalMessage: 'No se ha agregado un documento de contenido par ala obra',
+  },
+  WORK_CONTENT_UNSUPPORTED_TYPE: {
+    code: 'WORK-0009',
+    status: 400,
+    message: 'Formato de contenido no soportadp.',
+    internalMessage: 'El mimetype del archivo de contenido no es HTML',
+  },
+  WORK_CONTENT_INFO_FILE_MISSING: {
+    code: 'WORK-0010',
+    status: 400,
+    message: 'No se ha agregado información.',
+    internalMessage: 'No se ha agregado informacion del documento para el contenido',
+  },
+  WORK_CONTENT_INFO_NOT_CORRECT: {
+    code: 'WORK-0011',
+    status: 400,
+    message: 'Fromato incorrecto.',
+    internalMessage: '',
+  },
+  WORK_GENRE_NOT_UUID: {
+    code: 'WORK-0012',
+    status: 400,
+    message: 'Formato incorrecto.',
+    internalMessage: '',
+  },
+  WORK_GENRE_NOT_FOUND: {
+    code: 'WORK-0013',
+    status: 400,
+    message: 'No se encontro el genero especificado.',
+    internalMessage: '',
+  },
+  WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET: {
+    code: 'WORK-0012',
+    status: 500,
+    message: 'Lo sentimos, esta funcion no esta disponible',
+    internalMessage: '',
+  },
+  WORK_CHAPTER_NOT_UUID: {
+    code: 'WORK-0013',
+    status: 400,
+    message: 'Formato incorrecto.',
+    internalMessage: '',
+  },
+  WORK_CHAPTER_DOES_NOT_EXIST: {
+    code: 'WORK-0014',
+    status: 400,
+    message: 'El capitulo no existe.',
+    internalMessage: '',
+  },
 } as const;

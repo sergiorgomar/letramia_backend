@@ -62,7 +62,8 @@ export const ERROR_CATALOG = {
     code: 'ACC-0007',
     status: 401,
     message: 'Sesión inválida o expirada.',
-    internalMessage: 'Token válido en Supabase pero sin usuario en base de datos',
+    internalMessage:
+      'Token válido en Supabase pero sin usuario en base de datos',
   },
   ACCOUNT_DISABLED: {
     code: 'ACC-0008',
@@ -75,6 +76,13 @@ export const ERROR_CATALOG = {
     status: 401,
     message: 'Error refrescando token.',
     internalMessage: 'Supabase Auth rechazó el refreshSession',
+  },
+  NOT_ADMITED_MAIL: {
+    code: 'ACC-0010',
+    status: 401,
+    message:
+      'Error creando su cuenta. El correo electrónico proporcionado no está permitido',
+    internalMessage: 'Ingresaron un correo no admitido',
   },
   VALIDATION_ERROR: {
     code: 'VAL-0001',
@@ -92,7 +100,8 @@ export const ERROR_CATALOG = {
   PAYLOAD_TOO_LARGE: {
     code: 'APP-0002',
     status: 413,
-    message: 'Su solicitud es demasiado grande, reduzca el tamaño de sus archivos.',
+    message:
+      'Su solicitud es demasiado grande, reduzca el tamaño de sus archivos.',
     internalMessage:
       'Body-parser o Multer rechazaron la request por exceder su límite de tamaño',
   },

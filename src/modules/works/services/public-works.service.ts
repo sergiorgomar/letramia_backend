@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AppException } from '@/common/exceptions/app.exception';
+import { PRIVATE_STORAGE } from '@/common/constants';
 import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-storage.provider';
 import {
   PublishedWorkEntity,
@@ -42,6 +43,7 @@ export class PublicWorksService {
     private readonly workChaptersRepository: WorkChaptersRepository,
     private readonly workThemesRepository: WorkThemesRepository,
     private readonly workGenresRepository: WorkGenresRepository,
+    @Inject(PRIVATE_STORAGE)
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
     private readonly configService: ConfigService,
   ) {}
@@ -251,7 +253,7 @@ export class PublicWorksService {
       coverSmallUrl: urlByVariant.small,
       coverMediumUrl: urlByVariant.medium,
       coverLargeUrl: urlByVariant.large,
-      coverUrlExpiresAt: signed[0].expiresAt,
+      // coverUrlExpiresAt: signed[0].expiresAt,
     });
 
     return urlByVariant[variant];

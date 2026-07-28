@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_ADMIN_PROVIDER } from '@/common/constants';
 
@@ -9,14 +8,10 @@ export type SignedUrl = { url: string; expiresAt: Date };
 
 @Injectable()
 export class SupabaseStorageProvider {
-  private readonly bucket: string;
-
   constructor(
     @Inject(SUPABASE_ADMIN_PROVIDER) private readonly supabase: SupabaseClient,
-    configService: ConfigService,
-  ) {
-    this.bucket = configService.get<string>('SUPABASE_STORAGE_BUCKET')!;
-  }
+    private readonly bucket: string,
+  ) {}
 
   async upload(path: string, file: Buffer, contentType: string) {
     const { error } = await this.supabase.storage

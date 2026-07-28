@@ -26,6 +26,9 @@ export class AccountsService {
   ) {}
 
   async createAccount(dto: CreateAccount): Promise<AccountResult> {
+    if (dto.email.includes('letramia')) {
+      throw new AppException('NOT_ADMITED_MAIL', { email: dto.email });
+    }
     const emailTaken = await this.usersRepository.existsByEmail(dto.email);
     if (emailTaken) {
       throw new AppException('ACCOUNT_ALREADY_EXISTS_IN_DB', {

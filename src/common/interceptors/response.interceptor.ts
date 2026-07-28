@@ -42,6 +42,9 @@ export class ResponseInterceptor implements NestInterceptor {
   }
 
   private toValidatedDto<T extends object>(dto: new () => T, data: unknown): T {
+    if (data === null || data === undefined) {
+      return null;
+    }
     const instance = plainToInstance(dto, data);
     const errors = validateSync(instance, {
       whitelist: true,

@@ -11,6 +11,7 @@ import { ImageModule } from '@/infrastructure/image/image.module';
 import { SystemModule } from '@/modules/system/system.module';
 import { WorksModule } from '@/modules/works/works.module';
 import { AccountsModule } from '@/modules/accounts/accounts.module';
+import { FilesModule } from './modules/files/files.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AccountsModule } from '@/modules/accounts/accounts.module';
     ImageModule,
 
     // bussines
+    FilesModule,
     SystemModule,
     WorksModule,
     AccountsModule,
