@@ -6,10 +6,10 @@ export class CreateWorkDto {
   title: string;
 
   @IsUUID()
-  workCategoryId: string;
+  workThemeId: string;
 
   @IsUUID()
-  workTypeId: string;
+  workGenreId: string;
 
   @IsString()
   @IsOptional()

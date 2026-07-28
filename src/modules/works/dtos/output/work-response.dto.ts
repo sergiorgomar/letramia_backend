@@ -20,10 +20,10 @@ export class WorkResponseDto {
   slug: string;
 
   @IsUUID()
-  workCategoryId: string;
+  workThemeId: string;
 
   @IsUUID()
-  workTypeId: string;
+  workGenreId: string;
 
   @IsString()
   @IsOptional()

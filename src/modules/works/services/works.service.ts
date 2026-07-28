@@ -7,8 +7,8 @@ import {
   IMAGE_VARIANT_NAMES,
 } from '@/infrastructure/image/image-processor.service';
 import { WorkEntity, WorksRepository } from '../repositories/works.repository';
-import { WorkCategoriesRepository } from '../repositories/work-categories.repository';
-import { WorkTypesRepository } from '../repositories/work-types.repository';
+import { WorkThemesRepository } from '../repositories/work-themes.repository';
+import { WorkGenresRepository } from '../repositories/work-genres.repository';
 import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
 import { CreateWork } from '../types/create-work.type';
 import { CreateWorkResult } from '../types/create-work-result.type';
@@ -51,8 +51,8 @@ const COVER_VARIANT_COLUMN: Record<
 export class WorksService {
   constructor(
     private readonly worksRepository: WorksRepository,
-    private readonly workCategoriesRepository: WorkCategoriesRepository,
-    private readonly workTypesRepository: WorkTypesRepository,
+    private readonly workThemesRepository: WorkThemesRepository,
+    private readonly workGenresRepository: WorkGenresRepository,
     private readonly workChaptersRepository: WorkChaptersRepository,
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
     private readonly imageProcessorService: ImageProcessorService,
@@ -130,25 +130,25 @@ export class WorksService {
   }
 
   async create(dto: CreateWork): Promise<CreateWorkResult> {
-    const categoryExists = await this.workCategoriesRepository.existsById(
-      dto.workCategoryId,
+    const themeExists = await this.workThemesRepository.existsById(
+      dto.workThemeId,
     );
-    if (!categoryExists) {
+    if (!themeExists) {
       throw new AppException('WORK_CATEGORY_NOT_FOUND', {
-        workCategoryId: dto.workCategoryId,
+        workThemeId: dto.workThemeId,
       });
     }
 
-    const type = await this.workTypesRepository.findById(dto.workTypeId);
-    if (!type) {
+    const genre = await this.workGenresRepository.findById(dto.workGenreId);
+    if (!genre) {
       throw new AppException('WORK_TYPE_NOT_FOUND', {
-        workTypeId: dto.workTypeId,
+        workGenreId: dto.workGenreId,
       });
     }
 
     const slug = await this.resolveUniqueSlug(dto.title);
 
-    return this.worksRepository.create({ ...dto, synopsis: type.name === 'Poema' ? null : dto.synopsis, slug });
+    return this.worksRepository.create({ ...dto, synopsis: genre.name === 'Poema' ? null : dto.synopsis, slug });
   }
 
   async update(
@@ -161,19 +161,19 @@ export class WorksService {
       throw new AppException('WORK_NOT_FOUND', { id, userId });
     }
 
-    const categoryExists = await this.workCategoriesRepository.existsById(
-      dto.workCategoryId,
+    const themeExists = await this.workThemesRepository.existsById(
+      dto.workThemeId,
     );
-    if (!categoryExists) {
+    if (!themeExists) {
       throw new AppException('WORK_CATEGORY_NOT_FOUND', {
-        workCategoryId: dto.workCategoryId,
+        workThemeId: dto.workThemeId,
       });
     }
 
-    const type = await this.workTypesRepository.findById(dto.workTypeId);
-    if (!type) {
+    const genre = await this.workGenresRepository.findById(dto.workGenreId);
+    if (!genre) {
       throw new AppException('WORK_TYPE_NOT_FOUND', {
-        workTypeId: dto.workTypeId,
+        workGenreId: dto.workGenreId,
       });
     }
 
@@ -184,7 +184,7 @@ export class WorksService {
         ? work.slug
         : await this.resolveUniqueSlug(dto.title, id);
 
-    const updated = await this.worksRepository.update(id, { ...dto, synopsis: type.name === 'Poema' ? null : dto.synopsis, slug });
+    const updated = await this.worksRepository.update(id, { ...dto, synopsis: genre.name === 'Poema' ? null : dto.synopsis, slug });
     return this.toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 
@@ -202,8 +202,8 @@ export class WorksService {
     }
 
     if (dto.status === WorkStatus.PUBLISHED) {
-      const type = await this.workTypesRepository.findById(work.workTypeId);
-      const isPoem = type?.name === 'Poema';
+      const genre = await this.workGenresRepository.findById(work.workGenreId);
+      const isPoem = genre?.name === 'Poema';
       const hasContent = isPoem
         ? Boolean((await this.supabaseStorageProvider.downloadText(`works/${id}/poem.html`))?.trim())
         : (await this.workChaptersRepository.findAllByWorkId(id)).length > 0;
@@ -320,14 +320,14 @@ export class WorksService {
 
   private async assertPoemOwned(id: string, userId: string): Promise<void> {
     const work = await this.worksRepository.findByIdAndUserId(id, userId);
-    const type = work && await this.workTypesRepository.findById(work.workTypeId);
-    if (!work || !type || type.name !== 'Poema') throw new AppException('WORK_NOT_FOUND', { id, userId });
+    const genre = work && await this.workGenresRepository.findById(work.workGenreId);
+    if (!work || !genre || genre.name !== 'Poema') throw new AppException('WORK_NOT_FOUND', { id, userId });
   }
 
   private async toWorkResult(work: WorkEntity, coverVariant: ImageVariantName): Promise<WorkResult> {
-    const type = await this.workTypesRepository.findById(work.workTypeId);
+    const genre = await this.workGenresRepository.findById(work.workGenreId);
     const chapters = await this.workChaptersRepository.findAllByWorkId(work.id);
-    return toWorkResult(work, coverVariant, type?.name === 'Poema' && chapters.length === 0);
+    return toWorkResult(work, coverVariant, genre?.name === 'Poema' && chapters.length === 0);
   }
 
   private async resolveUniqueSlug(

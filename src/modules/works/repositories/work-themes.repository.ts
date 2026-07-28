@@ -3,45 +3,45 @@ import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
-import { workCategoryEntity } from '../entities/work-category.entity';
+import { workThemeEntity } from '../entities/work-theme.entity';
 
-export type WorkCategoryEntity = typeof workCategoryEntity.$inferSelect;
-export type CreateWorkCategoryEntity = {
+export type WorkThemeEntity = typeof workThemeEntity.$inferSelect;
+export type CreateWorkThemeEntity = {
   name: string;
 };
 @Injectable()
-export class WorkCategoriesRepository {
+export class WorkThemesRepository {
   constructor(
     @Inject(DATABASE_PROVIDER) private readonly db: PostgresJsDatabase,
   ) {}
 
   @HandleErrors('DATABASE_ERROR')
-  async create(data: CreateWorkCategoryEntity): Promise<WorkCategoryEntity> {
+  async create(data: CreateWorkThemeEntity): Promise<WorkThemeEntity> {
     const [row] = await this.db
-      .insert(workCategoryEntity)
+      .insert(workThemeEntity)
       .values(data)
       .returning();
     return row;
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async findAll(): Promise<WorkCategoryEntity[]> {
+  async findAll(): Promise<WorkThemeEntity[]> {
     return this.db
       .select({
-        id: workCategoryEntity.id,
-        name: workCategoryEntity.name,
-        createdAt: workCategoryEntity.createdAt,
-        updatedAt: workCategoryEntity.updatedAt,
+        id: workThemeEntity.id,
+        name: workThemeEntity.name,
+        createdAt: workThemeEntity.createdAt,
+        updatedAt: workThemeEntity.updatedAt,
       })
-      .from(workCategoryEntity);
+      .from(workThemeEntity);
   }
 
   @HandleErrors('DATABASE_ERROR')
   async existsById(id: string): Promise<boolean> {
     const [row] = await this.db
-      .select({ id: workCategoryEntity.id })
-      .from(workCategoryEntity)
-      .where(eq(workCategoryEntity.id, id))
+      .select({ id: workThemeEntity.id })
+      .from(workThemeEntity)
+      .where(eq(workThemeEntity.id, id))
       .limit(1);
     return !!row;
   }

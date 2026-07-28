@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { WorksController } from './controllers/works.controller';
 import { WorksService } from './services/works.service';
 import { WorksRepository } from './repositories/works.repository';
-import { WorkCategoriesController } from './controllers/work-categories.controller';
-import { WorkCategoriesService } from './services/work-categories.service';
-import { WorkCategoriesRepository } from './repositories/work-categories.repository';
-import { WorkTypesController } from './controllers/work-types.controller';
-import { WorkTypesService } from './services/work-types.service';
-import { WorkTypesRepository } from './repositories/work-types.repository';
+import { WorkThemesController } from './controllers/work-themes.controller';
+import { WorkThemesService } from './services/work-themes.service';
+import { WorkThemesRepository } from './repositories/work-themes.repository';
+import { WorkGenresController } from './controllers/work-genres.controller';
+import { WorkGenresService } from './services/work-genres.service';
+import { WorkGenresRepository } from './repositories/work-genres.repository';
 import { WorkChaptersController } from './controllers/work-chapters.controller';
 import { WorkChaptersService } from './services/work-chapters.service';
 import { WorkChaptersRepository } from './repositories/work-chapters.repository';
@@ -17,8 +17,8 @@ import { PublicWorksService } from './services/public-works.service';
 @Module({
   controllers: [
     WorksController,
-    WorkCategoriesController,
-    WorkTypesController,
+    WorkThemesController,
+    WorkGenresController,
     WorkChaptersController,
     PublicWorksController,
   ],
@@ -26,10 +26,10 @@ import { PublicWorksService } from './services/public-works.service';
     WorksService,
     WorksRepository,
     WorkChaptersRepository,
-    WorkCategoriesService,
-    WorkCategoriesRepository,
-    WorkTypesService,
-    WorkTypesRepository,
+    WorkThemesService,
+    WorkThemesRepository,
+    WorkGenresService,
+    WorkGenresRepository,
     WorkChaptersService,
     PublicWorksService,
   ],

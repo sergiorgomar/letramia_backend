@@ -18,19 +18,19 @@ export class PublishedWorkResponseDto {
   authorName: string;
 
   @IsUUID()
-  categoryId: string;
+  themeId: string;
 
   @IsString()
-  categoryName: string;
+  themeName: string;
 
   @IsString()
-  categorySlug: string;
+  themeSlug: string;
 
   @IsUUID()
-  typeId: string;
+  genreId: string;
 
   @IsString()
-  typeName: string;
+  genreName: string;
 
   @IsBoolean()
   isPoem: boolean;

@@ -3,8 +3,8 @@ import { WorkStatus } from './work-status.enum';
 export type WorkResult = {
   id: string;
   userId: string;
-  workCategoryId: string;
-  workTypeId: string;
+  workThemeId: string;
+  workGenreId: string;
   title: string;
   slug: string;
   synopsis: string | null;

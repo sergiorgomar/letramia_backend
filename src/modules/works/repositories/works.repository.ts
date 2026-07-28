@@ -5,8 +5,8 @@ import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 import { userEntity } from '@/modules/accounts/entities/user.entity';
 import { workEntity } from '../entities/work.entity';
-import { workCategoryEntity } from '../entities/work-category.entity';
-import { workTypeEntity } from '../entities/work-type.entity';
+import { workThemeEntity } from '../entities/work-theme.entity';
+import { workGenreEntity } from '../entities/work-genre.entity';
 import { workChapterEntity } from '../entities/work-chapter.entity';
 import { WorkStatus } from '../types/work-status.enum';
 
@@ -15,15 +15,15 @@ export type CreateWorkEntity = {
   userId: string;
   title: string;
   slug: string;
-  workCategoryId: string;
-  workTypeId: string;
+  workThemeId: string;
+  workGenreId: string;
   synopsis?: string | null;
 };
 export type UpdateWorkEntity = {
   title: string;
   slug: string;
-  workCategoryId: string;
-  workTypeId: string;
+  workThemeId: string;
+  workGenreId: string;
   synopsis?: string | null;
 };
 export type UpdateWorkStatusEntity = {
@@ -45,10 +45,10 @@ export type PublishedWorkEntity = {
   slug: string;
   synopsis: string | null;
   authorName: string;
-  categoryId: string;
-  categoryName: string;
-  typeId: string;
-  typeName: string;
+  themeId: string;
+  themeName: string;
+  genreId: string;
+  genreName: string;
   coverThumbUrl: string | null;
   coverSmallUrl: string | null;
   coverMediumUrl: string | null;
@@ -58,8 +58,8 @@ export type PublishedWorkEntity = {
   updatedAt: Date;
 };
 export type FindPublishedWorksEntity = {
-  categoryId?: string;
-  typeId?: string;
+  themeId?: string;
+  genreId?: string;
   search?: string;
   orderBy: 'recent' | 'alphabetical';
 };
@@ -72,10 +72,10 @@ const PUBLISHED_WORK_COLUMNS = {
   slug: workEntity.slug,
   synopsis: workEntity.synopsis,
   authorName: userEntity.name,
-  categoryId: workCategoryEntity.id,
-  categoryName: workCategoryEntity.name,
-  typeId: workTypeEntity.id,
-  typeName: workTypeEntity.name,
+  themeId: workThemeEntity.id,
+  themeName: workThemeEntity.name,
+  genreId: workGenreEntity.id,
+  genreName: workGenreEntity.name,
   coverThumbUrl: workEntity.coverThumbUrl,
   coverSmallUrl: workEntity.coverSmallUrl,
   coverMediumUrl: workEntity.coverMediumUrl,
@@ -88,8 +88,8 @@ const PUBLISHED_WORK_COLUMNS = {
 const WORK_COLUMNS = {
   id: workEntity.id,
   userId: workEntity.userId,
-  workCategoryId: workEntity.workCategoryId,
-  workTypeId: workEntity.workTypeId,
+  workThemeId: workEntity.workThemeId,
+  workGenreId: workEntity.workGenreId,
   title: workEntity.title,
   slug: workEntity.slug,
   synopsis: workEntity.synopsis,
@@ -195,10 +195,10 @@ export class WorksRepository {
   ): Promise<PublishedWorkEntity[]> {
     const conditions = [eq(workEntity.status, WorkStatus.PUBLISHED)];
 
-    if (filters.categoryId) {
-      conditions.push(eq(workEntity.workCategoryId, filters.categoryId));
+    if (filters.themeId) {
+      conditions.push(eq(workEntity.workThemeId, filters.themeId));
     }
-    if (filters.typeId) conditions.push(eq(workEntity.workTypeId, filters.typeId));
+    if (filters.genreId) conditions.push(eq(workEntity.workGenreId, filters.genreId));
 
     if (filters.search) {
       // ilike = case-insensitive; busca por título o por nombre del autor.
@@ -213,10 +213,10 @@ export class WorksRepository {
       .from(workEntity)
       .innerJoin(userEntity, eq(userEntity.id, workEntity.userId))
       .innerJoin(
-        workCategoryEntity,
-        eq(workCategoryEntity.id, workEntity.workCategoryId),
+        workThemeEntity,
+        eq(workThemeEntity.id, workEntity.workThemeId),
       )
-      .innerJoin(workTypeEntity, eq(workTypeEntity.id, workEntity.workTypeId))
+      .innerJoin(workGenreEntity, eq(workGenreEntity.id, workEntity.workGenreId))
       .where(and(...conditions))
       .orderBy(
         filters.orderBy === 'alphabetical'
@@ -234,10 +234,10 @@ export class WorksRepository {
       .from(workEntity)
       .innerJoin(userEntity, eq(userEntity.id, workEntity.userId))
       .innerJoin(
-        workCategoryEntity,
-        eq(workCategoryEntity.id, workEntity.workCategoryId),
+        workThemeEntity,
+        eq(workThemeEntity.id, workEntity.workThemeId),
       )
-      .innerJoin(workTypeEntity, eq(workTypeEntity.id, workEntity.workTypeId))
+      .innerJoin(workGenreEntity, eq(workGenreEntity.id, workEntity.workGenreId))
       .where(
         and(
           eq(workEntity.slug, slug),
@@ -258,8 +258,8 @@ export class WorksRepository {
   async findSitemapChapters(): Promise<SitemapChapterEntity[]> {
     return this.db.select({ workSlug: workEntity.slug, chapterSlug: workChapterEntity.slug, updatedAt: workChapterEntity.updatedAt })
       .from(workChapterEntity).innerJoin(workEntity, eq(workEntity.id, workChapterEntity.workId))
-      .innerJoin(workTypeEntity, eq(workTypeEntity.id, workEntity.workTypeId))
-      .where(and(eq(workEntity.status, WorkStatus.PUBLISHED), ne(workTypeEntity.name, 'Poema')));
+      .innerJoin(workGenreEntity, eq(workGenreEntity.id, workEntity.workGenreId))
+      .where(and(eq(workEntity.status, WorkStatus.PUBLISHED), ne(workGenreEntity.name, 'Poema')));
   }
 
   // Trae solo los slugs que puedan colisionar con `baseSlug` (el propio y sus

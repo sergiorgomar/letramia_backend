@@ -1,4 +1,4 @@
-export type WorkCategoryResult = {
+export type WorkThemeResult = {
   id: string;
   name: string;
   createdAt: Date;

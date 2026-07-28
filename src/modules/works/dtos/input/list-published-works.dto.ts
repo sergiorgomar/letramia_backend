@@ -8,11 +8,11 @@ export class ListPublishedWorksDto {
 
   @IsString()
   @IsOptional()
-  categorySlug?: string;
+  themeSlug?: string;
 
   @IsString()
   @IsOptional()
-  typeSlug?: string;
+  genreSlug?: string;
 
   @IsEnum(PublishedWorkSort)
   @IsOptional()

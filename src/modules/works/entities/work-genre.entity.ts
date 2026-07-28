@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, timestamp } from 'drizzle-orm/pg-core';
 
-export const workTypeEntity = pgTable('work_types', {
+export const workGenreEntity = pgTable('work_genres', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 100 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),

@@ -1,4 +1,4 @@
-export type WorkTypeResult = {
+export type WorkGenreResult = {
   id: string;
   name: string;
   createdAt: Date;

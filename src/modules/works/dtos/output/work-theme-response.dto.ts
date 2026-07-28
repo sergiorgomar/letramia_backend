@@ -1,6 +1,6 @@
 import { IsDate, IsString, IsUUID } from 'class-validator';
 
-export class WorkTypeResponseDto {
+export class WorkThemeResponseDto {
   @IsUUID()
   id: string;
 

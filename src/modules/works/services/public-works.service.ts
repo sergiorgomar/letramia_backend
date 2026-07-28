@@ -6,8 +6,8 @@ import {
   WorksRepository,
 } from '../repositories/works.repository';
 import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
-import { WorkCategoriesRepository } from '../repositories/work-categories.repository';
-import { WorkTypesRepository } from '../repositories/work-types.repository';
+import { WorkThemesRepository } from '../repositories/work-themes.repository';
+import { WorkGenresRepository } from '../repositories/work-genres.repository';
 import { ListPublishedWorks } from '../types/list-published-works.type';
 import { PublishedWorkSort } from '../types/published-work-sort.enum';
 import { PublishedWorkResult } from '../types/published-work-result.type';
@@ -40,8 +40,8 @@ export class PublicWorksService {
   constructor(
     private readonly worksRepository: WorksRepository,
     private readonly workChaptersRepository: WorkChaptersRepository,
-    private readonly workCategoriesRepository: WorkCategoriesRepository,
-    private readonly workTypesRepository: WorkTypesRepository,
+    private readonly workThemesRepository: WorkThemesRepository,
+    private readonly workGenresRepository: WorkGenresRepository,
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
     private readonly configService: ConfigService,
   ) {}
@@ -84,40 +84,40 @@ export class PublicWorksService {
   // sumar una migración. Si algún día dos categorías colisionan, toca
   // persistir el slug de verdad.
   async findAllCategories(): Promise<PublishedCategoryResult[]> {
-    const categories = await this.workCategoriesRepository.findAll();
-    return categories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      slug: slugify(category.name),
+    const themes = await this.workThemesRepository.findAll();
+    return themes.map((theme) => ({
+      id: theme.id,
+      name: theme.name,
+      slug: slugify(theme.name),
     }));
   }
 
   async findAllTypes(): Promise<PublishedCategoryResult[]> {
-    const types = await this.workTypesRepository.findAll();
-    return types.map((type) => ({ id: type.id, name: type.name, slug: slugify(type.name) }));
+    const genres = await this.workGenresRepository.findAll();
+    return genres.map((genre) => ({ id: genre.id, name: genre.name, slug: slugify(genre.name) }));
   }
 
   async findAllPublished(
     filters: ListPublishedWorks,
   ): Promise<PublishedWorkResult[]> {
-    let categoryId: string | undefined;
-    let typeId: string | undefined;
+    let themeId: string | undefined;
+    let genreId: string | undefined;
 
-    if (filters.categorySlug) {
-      const category = await this.findCategoryBySlug(filters.categorySlug);
+    if (filters.themeSlug) {
+      const theme = await this.findCategoryBySlug(filters.themeSlug);
       // Slug inexistente: no es un error, simplemente no hay resultados.
-      if (!category) return [];
-      categoryId = category.id;
+      if (!theme) return [];
+      themeId = theme.id;
     }
-    if (filters.typeSlug) {
-      const type = (await this.findAllTypes()).find((item) => item.slug === filters.typeSlug);
-      if (!type) return [];
-      typeId = type.id;
+    if (filters.genreSlug) {
+      const genre = (await this.findAllTypes()).find((item) => item.slug === filters.genreSlug);
+      if (!genre) return [];
+      genreId = genre.id;
     }
 
     const works = await this.worksRepository.findAllPublished({
-      categoryId,
-      typeId,
+      themeId,
+      genreId,
       search: filters.search,
       orderBy:
         filters.sort === PublishedWorkSort.ALPHABETICAL
@@ -164,7 +164,7 @@ export class PublicWorksService {
     if (!work) {
       throw new AppException('PUBLISHED_WORK_NOT_FOUND', { slug: workSlug });
     }
-    if (work.typeName === 'Poema') {
+    if (work.genreName === 'Poema') {
       throw new AppException('PUBLISHED_CHAPTER_NOT_FOUND', { workSlug, chapterSlug });
     }
 
@@ -209,12 +209,12 @@ export class PublicWorksService {
       slug: work.slug,
       synopsis: work.synopsis,
       authorName: work.authorName,
-      categoryId: work.categoryId,
-      categoryName: work.categoryName,
-      categorySlug: slugify(work.categoryName),
-      typeId: work.typeId,
-      typeName: work.typeName,
-      isPoem: work.typeName === 'Poema',
+      themeId: work.themeId,
+      themeName: work.themeName,
+      themeSlug: slugify(work.themeName),
+      genreId: work.genreId,
+      genreName: work.genreName,
+      isPoem: work.genreName === 'Poema',
       coverUrl: await this.resolveCoverUrl(work, variant),
       createdAt: work.createdAt,
     };

@@ -6,7 +6,7 @@ import {
   WorkChaptersRepository,
 } from '../repositories/work-chapters.repository';
 import { WorksRepository } from '../repositories/works.repository';
-import { WorkTypesRepository } from '../repositories/work-types.repository';
+import { WorkGenresRepository } from '../repositories/work-genres.repository';
 import { CreateWorkChapter } from '../types/create-work-chapter.type';
 import { UpdateWorkChapter } from '../types/update-work-chapter.type';
 import { ReorderWorkChapters } from '../types/reorder-work-chapters.type';
@@ -21,7 +21,7 @@ export class WorkChaptersService {
   constructor(
     private readonly workChaptersRepository: WorkChaptersRepository,
     private readonly worksRepository: WorksRepository,
-    private readonly workTypesRepository: WorkTypesRepository,
+    private readonly workGenresRepository: WorkGenresRepository,
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
   ) {}
 
@@ -194,10 +194,10 @@ export class WorkChaptersService {
     if (!work) {
       throw new AppException('WORK_NOT_FOUND', { id: workId, userId });
     }
-    const type = await this.workTypesRepository.findById(work.workTypeId);
+    const genre = await this.workGenresRepository.findById(work.workGenreId);
     const hasLegacyChapters = allowLegacyChapters &&
       (await this.workChaptersRepository.findAllByWorkId(workId)).length > 0;
-    if (type?.name === 'Poema' && !hasLegacyChapters) {
+    if (genre?.name === 'Poema' && !hasLegacyChapters) {
       throw new AppException('WORK_NOT_FOUND', { id: workId, userId });
     }
   }

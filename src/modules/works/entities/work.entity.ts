@@ -8,8 +8,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { userEntity } from '@/modules/accounts/entities/user.entity';
 import { WorkStatus } from '../types/work-status.enum';
-import { workCategoryEntity } from './work-category.entity';
-import { workTypeEntity } from './work-type.entity';
+import { workThemeEntity } from './work-theme.entity';
+import { workGenreEntity } from './work-genre.entity';
 
 export const workStatusEnum = pgEnum(
   'work_status',
@@ -21,12 +21,12 @@ export const workEntity = pgTable('works', {
   userId: uuid('user_id')
     .notNull()
     .references(() => userEntity.id),
-  workCategoryId: uuid('work_category_id')
+  workThemeId: uuid('work_theme_id')
     .notNull()
-    .references(() => workCategoryEntity.id),
-  workTypeId: uuid('work_type_id')
+    .references(() => workThemeEntity.id),
+  workGenreId: uuid('work_genre_id')
     .notNull()
-    .references(() => workTypeEntity.id),
+    .references(() => workGenreEntity.id),
   title: varchar('title', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 280 }).notNull().unique(),
   synopsis: text('synopsis'),

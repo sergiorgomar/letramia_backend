@@ -15,13 +15,13 @@ import { PublishedCategoryResponseDto } from '../dtos/output/published-category-
 export class PublicWorksController {
   constructor(private readonly publicWorksService: PublicWorksService) {}
 
-  @Get('work-categories')
+  @Get('work-themes')
   @ResponseDto(PublishedCategoryResponseDto, 'Categorías obtenidas con éxito')
   findAllCategories() {
     return this.publicWorksService.findAllCategories();
   }
 
-  @Get('work-types')
+  @Get('work-genres')
   @ResponseDto(PublishedCategoryResponseDto, 'Tipos obtenidos con éxito')
   findAllTypes() {
     return this.publicWorksService.findAllTypes();
