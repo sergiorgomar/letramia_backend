@@ -8,6 +8,7 @@ import { workThemeEntity } from '../entities/work-theme.entity';
 export type WorkThemeEntity = typeof workThemeEntity.$inferSelect;
 export type CreateWorkThemeEntity = {
   name: string;
+  slug: string;
 };
 @Injectable()
 export class WorkThemesRepository {
@@ -30,6 +31,7 @@ export class WorkThemesRepository {
       .select({
         id: workThemeEntity.id,
         name: workThemeEntity.name,
+        slug: workThemeEntity.slug,
         createdAt: workThemeEntity.createdAt,
         updatedAt: workThemeEntity.updatedAt,
       })

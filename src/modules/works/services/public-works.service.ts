@@ -96,7 +96,11 @@ export class PublicWorksService {
 
   async findAllTypes(): Promise<PublishedCategoryResult[]> {
     const genres = await this.workGenresRepository.findAll();
-    return genres.map((genre) => ({ id: genre.id, name: genre.name, slug: slugify(genre.name) }));
+    return genres.map((genre) => ({
+      id: genre.id,
+      name: genre.name,
+      slug: slugify(genre.name),
+    }));
   }
 
   async findAllPublished(

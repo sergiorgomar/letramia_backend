@@ -8,6 +8,7 @@ import { workGenreEntity } from '../entities/work-genre.entity';
 export type WorkGenreEntity = typeof workGenreEntity.$inferSelect;
 export type CreateWorkGenreEntity = {
   name: string;
+  slug: string;
 };
 
 @Injectable()
@@ -28,6 +29,7 @@ export class WorkGenresRepository {
       .select({
         id: workGenreEntity.id,
         name: workGenreEntity.name,
+        slug: workGenreEntity.slug,
         createdAt: workGenreEntity.createdAt,
         updatedAt: workGenreEntity.updatedAt,
       })

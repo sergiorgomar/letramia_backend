@@ -148,6 +148,7 @@ export class WorksRepository {
   ): Promise<WorkEntity> {
     const [row] = await this.db
       .update(workEntity)
+      //🔥 TODO: Dates validations UTC-6 or timestamp
       .set({ ...urls, updatedAt: new Date() })
       .where(eq(workEntity.id, id))
       .returning();
@@ -253,16 +254,32 @@ export class WorksRepository {
 
   @HandleErrors('DATABASE_ERROR')
   async findSitemapWorks(): Promise<SitemapWorkEntity[]> {
-    return this.db.select({ slug: workEntity.slug, updatedAt: workEntity.updatedAt })
-      .from(workEntity).where(eq(workEntity.status, WorkStatus.PUBLISHED));
+    return this.db
+      .select({ slug: workEntity.slug, updatedAt: workEntity.updatedAt })
+      .from(workEntity)
+      .where(eq(workEntity.status, WorkStatus.PUBLISHED));
   }
 
   @HandleErrors('DATABASE_ERROR')
   async findSitemapChapters(): Promise<SitemapChapterEntity[]> {
-    return this.db.select({ workSlug: workEntity.slug, chapterSlug: workChapterEntity.slug, updatedAt: workChapterEntity.updatedAt })
-      .from(workChapterEntity).innerJoin(workEntity, eq(workEntity.id, workChapterEntity.workId))
-      .innerJoin(workGenreEntity, eq(workGenreEntity.id, workEntity.workGenreId))
-      .where(and(eq(workEntity.status, WorkStatus.PUBLISHED), ne(workGenreEntity.name, 'Poema')));
+    return this.db
+      .select({
+        workSlug: workEntity.slug,
+        chapterSlug: workChapterEntity.slug,
+        updatedAt: workChapterEntity.updatedAt,
+      })
+      .from(workChapterEntity)
+      .innerJoin(workEntity, eq(workEntity.id, workChapterEntity.workId))
+      .innerJoin(
+        workGenreEntity,
+        eq(workGenreEntity.id, workEntity.workGenreId),
+      )
+      .where(
+        and(
+          eq(workEntity.status, WorkStatus.PUBLISHED),
+          ne(workGenreEntity.name, 'Poema'),
+        ),
+      );
   }
 
   // Trae solo los slugs que puedan colisionar con `baseSlug` (el propio y sus
