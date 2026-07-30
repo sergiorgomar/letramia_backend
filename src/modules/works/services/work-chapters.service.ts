@@ -7,7 +7,6 @@ import {
   WorkChaptersRepository,
 } from '../repositories/work-chapters.repository';
 import { WorksRepository } from '../repositories/works.repository';
-import { WorkGenresRepository } from '../repositories/work-genres.repository';
 import { CreateWorkChapter } from '../types/create-work-chapter.type';
 import { UpdateWorkChapter } from '../types/update-work-chapter.type';
 import { ReorderWorkChapters } from '../types/reorder-work-chapters.type';
@@ -15,14 +14,11 @@ import { WorkChapterResult } from '../types/work-chapter-result.type';
 import { WorkChapterContentResult } from '../types/work-chapter-content-result.type';
 import { slugify } from '../utils/slugify';
 
-const CHAPTER_CONTENT_MIME_TYPE = 'text/html';
-
 @Injectable()
 export class WorkChaptersService {
   constructor(
     private readonly workChaptersRepository: WorkChaptersRepository,
     private readonly worksRepository: WorksRepository,
-    private readonly workGenresRepository: WorkGenresRepository,
     @Inject(PRIVATE_STORAGE)
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
   ) {}
@@ -150,41 +146,6 @@ export class WorkChaptersService {
     }
   }
 
-  async uploadContent(
-    workId: string,
-    chapterId: string,
-    userId: string,
-    file?: Express.Multer.File,
-  ): Promise<WorkChapterResult> {
-    await this.assertWorkOwned(workId, userId, true);
-    const chapter = await this.getOwnedChapter(workId, chapterId);
-
-    if (!file) {
-      throw new AppException('CHAPTER_CONTENT_FILE_MISSING', {
-        workId,
-        chapterId,
-      });
-    }
-
-    if (file.mimetype !== CHAPTER_CONTENT_MIME_TYPE) {
-      throw new AppException('CHAPTER_CONTENT_UNSUPPORTED_TYPE', {
-        workId,
-        chapterId,
-        mimetype: file.mimetype,
-      });
-    }
-
-    // Ruta determinística derivada del id: un re-upload pisa el HTML anterior
-    // (upsert) en vez de acumular archivos huérfanos en el bucket.
-    await this.supabaseStorageProvider.upload(
-      chapterHtmlPath(workId, chapterId),
-      file.buffer,
-      CHAPTER_CONTENT_MIME_TYPE,
-    );
-
-    return toChapterResult(chapter);
-  }
-
   // Verifica que el libro exista y pertenezca al usuario. Cualquier operación
   // sobre capítulos pasa antes por acá.
   private async assertWorkOwned(
@@ -196,12 +157,13 @@ export class WorkChaptersService {
     if (!work) {
       throw new AppException('WORK_NOT_FOUND', { id: workId, userId });
     }
-    const genre = await this.workGenresRepository.findById(work.workGenreId);
-    const hasLegacyChapters = allowLegacyChapters &&
+    /*const genre = await this.workGenresRepository.findById(work.workGenreId);
+    const hasLegacyChapters =
+      allowLegacyChapters &&
       (await this.workChaptersRepository.findAllByWorkId(workId)).length > 0;
     if (genre?.name === 'Poema' && !hasLegacyChapters) {
       throw new AppException('WORK_NOT_FOUND', { id: workId, userId });
-    }
+    }*/
   }
 
   private async getOwnedChapter(

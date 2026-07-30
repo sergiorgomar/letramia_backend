@@ -7,11 +7,7 @@ import {
   Body,
   Param,
   ParseUUIDPipe,
-  UploadedFile,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import type { Request } from 'express';
 import { ResponseDto } from '@/common/decorators/response-dto.decorator';
 import { CurrentUser } from '@/infrastructure/auth/decorators/current-user.decorator';
 import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
@@ -22,8 +18,6 @@ import { ReorderWorkChaptersDto } from '../dtos/input/reorder-work-chapters.dto'
 import { WorkChapterResponseDto } from '../dtos/output/work-chapter-response.dto';
 import { WorkChapterDetailResponseDto } from '../dtos/output/work-chapter-detail-response.dto';
 import { DeleteWorkChapterResponseDto } from '../dtos/output/delete-work-chapter-response.dto';
-
-const MAX_CHAPTER_HTML_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 @Controller('works/:workId/chapters')
 export class WorkChaptersController {
@@ -94,29 +88,5 @@ export class WorkChaptersController {
   ) {
     await this.workChaptersService.delete(workId, chapterId, user.id);
     return { id: chapterId };
-  }
-
-  @Post(':chapterId/content')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: { fileSize: MAX_CHAPTER_HTML_SIZE_BYTES },
-    }),
-  )
-  @ResponseDto(
-    WorkChapterResponseDto,
-    'Contenido del capítulo guardado con éxito',
-  )
-  uploadContent(
-    @Param('workId', ParseUUIDPipe) workId: string,
-    @Param('chapterId', ParseUUIDPipe) chapterId: string,
-    @UploadedFile() file: Request['file'],
-    @CurrentUser() user: RequestUser,
-  ) {
-    return this.workChaptersService.uploadContent(
-      workId,
-      chapterId,
-      user.id,
-      file,
-    );
   }
 }

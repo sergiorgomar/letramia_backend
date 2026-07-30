@@ -8,8 +8,6 @@ import {
   IMAGE_VARIANT_NAMES,
 } from '@/infrastructure/image/image-processor.service';
 import { WorkEntity, WorksRepository } from '../repositories/works.repository';
-import { WorkThemesRepository } from '../repositories/work-themes.repository';
-import { WorkGenresRepository } from '../repositories/work-genres.repository';
 import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
 import { CreateWork } from '../types/create-work.type';
 import { CreateWorkResult } from '../types/create-work-result.type';
@@ -20,16 +18,6 @@ import { slugify } from '../utils/slugify';
 import { WorkStatus } from '../types/work-status.enum';
 
 const SUFFIX_PATTERN = /-(\d+)$/;
-
-const COVER_ALLOWED_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-]);
-
-// Portada de libro: vertical, entre 3:5 (0.6) y 4:5 (0.8) de ancho/alto.
-const COVER_MIN_ASPECT_RATIO = 0.6;
-const COVER_MAX_ASPECT_RATIO = 0.8;
 
 // Margen de seguridad: se re-firma un poco antes de que venza de verdad,
 // para no arriesgarse a servir una URL que expira a mitad de un request.
@@ -52,8 +40,6 @@ const COVER_VARIANT_COLUMN: Record<
 export class WorksService {
   constructor(
     private readonly worksRepository: WorksRepository,
-    private readonly workThemesRepository: WorkThemesRepository,
-    private readonly workGenresRepository: WorkGenresRepository,
     private readonly workChaptersRepository: WorkChaptersRepository,
     @Inject(PRIVATE_STORAGE)
     private readonly supabaseStorageProvider: SupabaseStorageProvider,
@@ -132,25 +118,29 @@ export class WorksService {
   }
 
   async create(dto: CreateWork): Promise<CreateWorkResult> {
-    const themeExists = await this.workThemesRepository.existsById(
-      dto.workThemeId,
-    );
-    if (!themeExists) {
-      throw new AppException('WORK_CATEGORY_NOT_FOUND', {
-        workThemeId: dto.workThemeId,
-      });
-    }
+    // const themeExists = await this.workThemesRepository.existsById(
+    //   dto.workThemeId,
+    // );
+    // if (!themeExists) {
+    //   throw new AppException('WORK_CATEGORY_NOT_FOUND', {
+    //     workThemeId: dto.workThemeId,
+    //   });
+    // }
 
-    const genre = await this.workGenresRepository.findById(dto.workGenreId);
-    if (!genre) {
-      throw new AppException('WORK_TYPE_NOT_FOUND', {
-        workGenreId: dto.workGenreId,
-      });
-    }
+    // const genre = await this.workGenresRepository.findById(dto.workGenreId);
+    // if (!genre) {
+    //   throw new AppException('WORK_TYPE_NOT_FOUND', {
+    //     workGenreId: dto.workGenreId,
+    //   });
+    // }
 
     const slug = await this.resolveUniqueSlug(dto.title);
 
-    return this.worksRepository.create({ ...dto, synopsis: genre.name === 'Poema' ? null : dto.synopsis, slug });
+    return this.worksRepository.create({
+      ...dto,
+      synopsis: /*genre.name === 'Poema' ? null :*/ dto.synopsis,
+      slug,
+    });
   }
 
   async update(
@@ -163,21 +153,21 @@ export class WorksService {
       throw new AppException('WORK_NOT_FOUND', { id, userId });
     }
 
-    const themeExists = await this.workThemesRepository.existsById(
-      dto.workThemeId,
-    );
-    if (!themeExists) {
-      throw new AppException('WORK_CATEGORY_NOT_FOUND', {
-        workThemeId: dto.workThemeId,
-      });
-    }
+    // const themeExists = await this.workThemesRepository.existsById(
+    //   dto.workThemeId,
+    // );
+    // if (!themeExists) {
+    //   throw new AppException('WORK_CATEGORY_NOT_FOUND', {
+    //     workThemeId: dto.workThemeId,
+    //   });
+    // }
 
-    const genre = await this.workGenresRepository.findById(dto.workGenreId);
-    if (!genre) {
-      throw new AppException('WORK_TYPE_NOT_FOUND', {
-        workGenreId: dto.workGenreId,
-      });
-    }
+    // const genre = await this.workGenresRepository.findById(dto.workGenreId);
+    // if (!genre) {
+    //   throw new AppException('WORK_TYPE_NOT_FOUND', {
+    //     workGenreId: dto.workGenreId,
+    //   });
+    // }
 
     // Solo se regenera el slug si el título realmente cambió: si no, cada
     // guardado sin cambios de título recalcularía colisión contra sí mismo.
@@ -186,7 +176,11 @@ export class WorksService {
         ? work.slug
         : await this.resolveUniqueSlug(dto.title, id);
 
-    const updated = await this.worksRepository.update(id, { ...dto, synopsis: genre.name === 'Poema' ? null : dto.synopsis, slug });
+    const updated = await this.worksRepository.update(id, {
+      ...dto,
+      synopsis: /*genre.name === 'Poema' ? null :*/ dto.synopsis,
+      slug,
+    });
     return this.toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 
@@ -204,14 +198,24 @@ export class WorksService {
     }
 
     if (dto.status === WorkStatus.PUBLISHED) {
-      const genre = await this.workGenresRepository.findById(work.workGenreId);
-      const isPoem = genre?.name === 'Poema';
+      //const genre = await this.workGenresRepository.findById(work.workGenreId);
+      const isPoem = false; //genre?.name === 'Poema';
       const hasContent = isPoem
-        ? Boolean((await this.supabaseStorageProvider.downloadText(`works/${id}/poem.html`))?.trim())
+        ? Boolean(
+            (
+              await this.supabaseStorageProvider.downloadText(
+                `works/${id}/poem.html`,
+              )
+            )?.trim(),
+          )
         : (await this.workChaptersRepository.findAllByWorkId(id)).length > 0;
 
       if (!hasContent) {
-        throw new AppException('WORK_CANNOT_PUBLISH_WITHOUT_CONTENT', { id, userId, isPoem });
+        throw new AppException('WORK_CANNOT_PUBLISH_WITHOUT_CONTENT', {
+          id,
+          userId,
+          isPoem,
+        });
       }
     }
 
@@ -221,7 +225,6 @@ export class WorksService {
 
     return this.toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
-
 
   async delete(id: string, userId: string): Promise<void> {
     const work = await this.worksRepository.findByIdAndUserId(id, userId);
@@ -244,14 +247,22 @@ export class WorksService {
 
   private async assertPoemOwned(id: string, userId: string): Promise<void> {
     const work = await this.worksRepository.findByIdAndUserId(id, userId);
-    const genre = work && await this.workGenresRepository.findById(work.workGenreId);
-    if (!work || !genre || genre.name !== 'Poema') throw new AppException('WORK_NOT_FOUND', { id, userId });
+    //const genre = work && await this.workGenresRepository.findById(work.workGenreId);
+    if (!work /*|| !genre || genre.name !== 'Poema'*/)
+      throw new AppException('WORK_NOT_FOUND', { id, userId });
   }
 
-  private async toWorkResult(work: WorkEntity, coverVariant: ImageVariantName): Promise<WorkResult> {
-    const genre = await this.workGenresRepository.findById(work.workGenreId);
-    const chapters = await this.workChaptersRepository.findAllByWorkId(work.id);
-    return toWorkResult(work, coverVariant, genre?.name === 'Poema' && chapters.length === 0);
+  private async toWorkResult(
+    work: WorkEntity,
+    coverVariant: ImageVariantName,
+  ): Promise<WorkResult> {
+    //const genre = await this.workGenresRepository.findById(work.workGenreId);
+    //const chapters = await this.workChaptersRepository.findAllByWorkId(work.id);
+    return toWorkResult(
+      work,
+      coverVariant,
+      true /*genre?.name === 'Poema' && chapters.length === 0*/,
+    );
   }
 
   private async resolveUniqueSlug(
@@ -286,9 +297,19 @@ function toWorkResult(
   coverVariant: ImageVariantName,
   isPoem: boolean,
 ): WorkResult {
-  const { coverThumbUrl, coverSmallUrl, coverMediumUrl, coverLargeUrl, ...rest } =
-    work;
-  const byVariant = { coverThumbUrl, coverSmallUrl, coverMediumUrl, coverLargeUrl };
+  const {
+    coverThumbUrl,
+    coverSmallUrl,
+    coverMediumUrl,
+    coverLargeUrl,
+    ...rest
+  } = work;
+  const byVariant = {
+    coverThumbUrl,
+    coverSmallUrl,
+    coverMediumUrl,
+    coverLargeUrl,
+  };
 
   return {
     ...rest,

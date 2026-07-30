@@ -7,9 +7,9 @@ import {
 } from '@/infrastructure/image/image-processor.service';
 import { WorksRepository } from '@/modules/works/repositories/works.repository';
 import { PRIVATE_STORAGE, PUBLIC_STORAGE } from '@/common/constants';
-import { WorkGenresRepository } from '@/modules/works/repositories/work-genres.repository';
 import { isUUID } from 'class-validator';
 import { WorkChaptersRepository } from '@/modules/works/repositories/work-chapters.repository';
+import { FilesRepository } from '../repositories/files.repository';
 
 @Injectable()
 export class WorksFilesService {
@@ -20,7 +20,7 @@ export class WorksFilesService {
     private readonly privateStorageService: SupabaseStorageProvider,
     private readonly imageService: ImageProcessorService,
     private readonly worksRepository: WorksRepository,
-    private readonly worksGenresRepository: WorkGenresRepository,
+    private readonly filesRepository: FilesRepository,
     private readonly worksChaptersRepository: WorkChaptersRepository,
   ) {}
 
@@ -128,8 +128,8 @@ export class WorksFilesService {
     }
 
     // data manipulation
-    const genre = await this.worksGenresRepository.findById(workGenreId);
-    if (!genre) {
+    const slug = await this.filesRepository.findGenreSlugById(workGenreId);
+    if (!slug) {
       throw new AppException('WORK_GENRE_NOT_FOUND', { workGenreId });
     }
 
@@ -138,8 +138,9 @@ export class WorksFilesService {
       throw new AppException('WORK_NOT_FOUND', { workId });
     }
 
-    switch (genre.name) {
-      case 'Poema':
+    // 🔥 Magic strings
+    switch (slug) {
+      case 'poema':
         // los poemas suben poem.html
         await this.privateStorageService.upload(
           `works/${workId}/poem.html`,
@@ -149,13 +150,13 @@ export class WorksFilesService {
         break;
 
       // los libros, novelas llevan capitulos
-      case 'Novela':
-      case 'Libro':
+      case 'novela':
+      case 'libro':
         //🔥 TODO: esas validaciones estan medio chafas
         if (!('workChapterId' in infoJson)) {
           throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', {
             infoJson,
-            more: `Missing workChapterId for ${genre.name}`,
+            more: `Missing workChapterId for ${slug}`,
           });
         }
         const workChapterId = String(infoJson.workChapterId);
@@ -182,7 +183,7 @@ export class WorksFilesService {
       // OTROS TIPOS NO SE HAN CONFIGURADO AUN
       default:
         throw new AppException('WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET', {
-          genre,
+          slug,
         });
     }
   }
