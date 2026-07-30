@@ -61,9 +61,7 @@ export class WorkChaptersRepository {
 
   @HandleErrors('DATABASE_ERROR')
   async deleteById(id: string): Promise<void> {
-    await this.db
-      .delete(workChapterEntity)
-      .where(eq(workChapterEntity.id, id));
+    await this.db.delete(workChapterEntity).where(eq(workChapterEntity.id, id));
   }
 
   @HandleErrors('DATABASE_ERROR')
@@ -84,10 +82,7 @@ export class WorkChaptersRepository {
       .select(WORK_CHAPTER_COLUMNS)
       .from(workChapterEntity)
       .where(
-        and(
-          eq(workChapterEntity.id, id),
-          eq(workChapterEntity.workId, workId),
-        ),
+        and(eq(workChapterEntity.id, id), eq(workChapterEntity.workId, workId)),
       )
       .limit(1);
     return row;

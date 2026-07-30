@@ -1,6 +1,6 @@
 export type UpdateWork = {
-  title: string;
-  workThemeId: string;
-  workGenreId: string;
+  id: string;
+  title?: string;
+  workThemeId?: string;
   synopsis?: string;
 };

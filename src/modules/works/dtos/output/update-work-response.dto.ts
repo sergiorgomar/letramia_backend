@@ -1,6 +1,6 @@
 import { IsUUID } from 'class-validator';
 
-export class DeleteWorkResponseDto {
+export class UpdateWorkResponseDto {
   @IsUUID()
   id: string;
 }

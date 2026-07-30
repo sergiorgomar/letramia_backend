@@ -1,15 +1,16 @@
 export const WORKS_ERROR_CATALOG = {
-  WORK_CATEGORY_NOT_FOUND: {
+  WORK_THEME_NOT_FOUND: {
     code: 'WORK-0001',
     status: 404,
-    message: 'El género seleccionado no existe.',
-    internalMessage: 'workCategoryId no corresponde a ninguna categoría existente',
+    message: 'La temática seleccionada no existe.',
+    internalMessage: 'workThemeId no corresponde a ninguna temática existente',
   },
-  WORK_TYPE_NOT_FOUND: {
+  WORK_GENRE_NOT_FOUND: {
     code: 'WORK-0002',
     status: 404,
-    message: 'El tipo de obra seleccionado no existe.',
-    internalMessage: 'workTypeId no corresponde a ningún tipo de obra existente',
+    message: 'El género literario no existe.',
+    internalMessage:
+      'workGenreId no corresponde a ningún tipo de obra literaria existente',
   },
   WORK_NOT_FOUND: {
     code: 'WORK-0003',
@@ -28,7 +29,8 @@ export const WORKS_ERROR_CATALOG = {
     code: 'WORK-0005',
     status: 400,
     message: 'Formato de imagen no soportado. Usá JPG, PNG o WEBP.',
-    internalMessage: 'El mimetype del archivo no está en la whitelist de portadas',
+    internalMessage:
+      'El mimetype del archivo no está en la whitelist de portadas',
   },
   WORK_COVER_INVALID_ASPECT_RATIO: {
     code: 'WORK-0006',
@@ -60,7 +62,8 @@ export const WORKS_ERROR_CATALOG = {
     code: 'WORK-0010',
     status: 400,
     message: 'No se ha agregado información.',
-    internalMessage: 'No se ha agregado informacion del documento para el contenido',
+    internalMessage:
+      'No se ha agregado informacion del documento para el contenido',
   },
   WORK_CONTENT_INFO_NOT_CORRECT: {
     code: 'WORK-0011',
@@ -72,12 +75,6 @@ export const WORKS_ERROR_CATALOG = {
     code: 'WORK-0012',
     status: 400,
     message: 'Formato incorrecto.',
-    internalMessage: '',
-  },
-  WORK_GENRE_NOT_FOUND: {
-    code: 'WORK-0013',
-    status: 400,
-    message: 'No se encontro el genero especificado.',
     internalMessage: '',
   },
   WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET: {

@@ -19,6 +19,7 @@ export class WorksFilesService {
     @Inject(PRIVATE_STORAGE)
     private readonly privateStorageService: SupabaseStorageProvider,
     private readonly imageService: ImageProcessorService,
+    //🔥 todo: no es de este dominio
     private readonly worksRepository: WorksRepository,
     private readonly filesRepository: FilesRepository,
     private readonly worksChaptersRepository: WorkChaptersRepository,
@@ -83,7 +84,7 @@ export class WorksFilesService {
     ) as Record<(typeof IMAGE_VARIANT_NAMES)[number], string>;
 
     // upload cover urls into database
-    await this.worksRepository.updateCoverUrls(work.id, {
+    await this.filesRepository.updateCoverUrls(work.id, {
       coverThumbUrl: urls.thumb,
       coverSmallUrl: urls.small,
       coverMediumUrl: urls.medium,

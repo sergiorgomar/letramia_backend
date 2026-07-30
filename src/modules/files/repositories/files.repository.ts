@@ -5,7 +5,14 @@ import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 
 import { workGenreEntity } from '@/modules/works/entities/work-genre.entity';
+import { workEntity } from '@/modules/works/entities/work.entity';
 
+export type UpdateCoverUrls = {
+  coverThumbUrl: string;
+  coverSmallUrl: string;
+  coverMediumUrl: string;
+  coverLargeUrl: string;
+};
 @Injectable()
 export class FilesRepository {
   constructor(
@@ -23,5 +30,16 @@ export class FilesRepository {
       .limit(1);
 
     return genre?.slug ?? null;
+  }
+
+  @HandleErrors('DATABASE_ERROR')
+  async updateCoverUrls(id: string, urls: UpdateCoverUrls) {
+    const [row] = await this.db
+      .update(workEntity)
+      //🔥 TODO: Dates validations UTC-6 or timestamp
+      .set({ ...urls, updatedAt: new Date() })
+      .where(eq(workEntity.id, id))
+      .returning();
+    return row;
   }
 }
