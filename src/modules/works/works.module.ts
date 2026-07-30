@@ -11,8 +11,6 @@ import { WorkGenresRepository } from './repositories/work-genres.repository';
 import { WorkChaptersController } from './controllers/work-chapters.controller';
 import { WorkChaptersService } from './services/work-chapters.service';
 import { WorkChaptersRepository } from './repositories/work-chapters.repository';
-import { PublicWorksController } from './controllers/public-works.controller';
-import { PublicWorksService } from './services/public-works.service';
 
 @Module({
   controllers: [
@@ -20,7 +18,6 @@ import { PublicWorksService } from './services/public-works.service';
     WorkThemesController,
     WorkGenresController,
     WorkChaptersController,
-    PublicWorksController,
   ],
   providers: [
     WorksService,
@@ -31,7 +28,6 @@ import { PublicWorksService } from './services/public-works.service';
     WorkGenresService,
     WorkGenresRepository,
     WorkChaptersService,
-    PublicWorksService,
   ],
   exports: [WorksRepository, WorkGenresRepository, WorkChaptersRepository],
 })

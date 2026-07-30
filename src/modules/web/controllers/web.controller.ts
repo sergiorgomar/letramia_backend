@@ -26,8 +26,8 @@ export class WebController {
   // controller para el detalle de una obra
   @Get(':slug/info')
   @ResponseDto(WorkResponseDto)
-  getWork(@Param('slug') slug: string,) {
-    return this.webService.getWork(slug);
+  getWork(@Param('slug') slug: string) {
+    return this.webService.getWorkInfo(slug);
   }
 
   // controller para datos de una sección, con query
@@ -46,5 +46,4 @@ export class WebController {
   ) {
     return this.webService.findChapterContent(workSlug, chapterSlug);
   }
-
 }

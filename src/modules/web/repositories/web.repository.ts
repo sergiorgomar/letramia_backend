@@ -94,7 +94,9 @@ export class WebRepository {
         //🔥 TODO: date of published is requiered
         publishedAt: workEntity.updatedAt,
         themeName: workThemeEntity.name,
+        themeSlug: workThemeEntity.slug,
         genreName: workGenreEntity.name,
+        genreSlug: workGenreEntity.slug,
         authorName: userEntity.name,
         chapterCount: sql<number>`
           (
@@ -103,7 +105,7 @@ export class WebRepository {
             WHERE ${workChapterEntity.workId} = ${workEntity.id}
           )
         `.mapWith(Number),
-        })
+      })
       .from(workEntity)
       .innerJoin(
         workThemeEntity,
@@ -113,14 +115,8 @@ export class WebRepository {
         workGenreEntity,
         eq(workGenreEntity.id, workEntity.workGenreId),
       )
-      .innerJoin(
-        userEntity,
-        eq(userEntity.id, workEntity.userId),
-      )
-      .leftJoin(
-        workChapterEntity,
-        eq(workChapterEntity.workId, workEntity.id),
-      )
+      .innerJoin(userEntity, eq(userEntity.id, workEntity.userId))
+      .leftJoin(workChapterEntity, eq(workChapterEntity.workId, workEntity.id))
       .where(
         and(
           eq(workEntity.slug, slug),
@@ -132,20 +128,18 @@ export class WebRepository {
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async findByQuery({ 
+  async findByQuery({
     search,
     themeSlug,
     genreSlug,
-    sort
+    sort,
   }: {
     search?: string;
     themeSlug?: string;
     genreSlug?: string;
-    sort?: PublishedWorkSort
+    sort?: PublishedWorkSort;
   }) {
-    const filters: SQL[] = [
-      eq(workEntity.status, WorkStatus.PUBLISHED),
-    ];
+    const filters: SQL[] = [eq(workEntity.status, WorkStatus.PUBLISHED)];
 
     const normalizedSearch = search?.trim();
 
@@ -154,7 +148,7 @@ export class WebRepository {
         or(
           ilike(workEntity.title, `%${normalizedSearch}%`),
           ilike(workEntity.synopsis, `%${normalizedSearch}%`),
-         // ilike(userEntity.name, `%${normalizedSearch}%`),
+          // ilike(userEntity.name, `%${normalizedSearch}%`),
         )!,
       );
     }
@@ -171,7 +165,6 @@ export class WebRepository {
       sort === PublishedWorkSort.ALPHABETICAL
         ? asc(workEntity.title)
         : desc(workEntity.createdAt);
-    
     const works = await this.db
       .select({
         slug: workEntity.slug,
@@ -180,26 +173,17 @@ export class WebRepository {
         thumbCoverUrl: workEntity.coverThumbUrl,
         //publishedAt: workEntity.updatedAt,
         theme: workThemeEntity.name,
-        genre:  workGenreEntity.name,
+        genre: workGenreEntity.name,
         authorName: userEntity.name,
       })
       .from(workEntity)
-      .leftJoin(
-        workThemeEntity,
-        eq(workThemeEntity.id, workEntity.workThemeId),
-      )
-      .leftJoin(
-        workGenreEntity,
-        eq(workGenreEntity.id, workEntity.workGenreId),
-      )
-      .innerJoin(
-        userEntity,
-        eq(userEntity.id, workEntity.userId),
-      )
+      .leftJoin(workThemeEntity, eq(workThemeEntity.id, workEntity.workThemeId))
+      .leftJoin(workGenreEntity, eq(workGenreEntity.id, workEntity.workGenreId))
+      .innerJoin(userEntity, eq(userEntity.id, workEntity.userId))
       .where(and(...filters))
       .orderBy(orderBy)
       .limit(100);
-    return works; 
+    return works;
   }
 
   @HandleErrors('DATABASE_ERROR')
@@ -212,10 +196,7 @@ export class WebRepository {
         chapterTitle: workChapterEntity.title,
       })
       .from(workEntity)
-      .innerJoin(
-        workChapterEntity,
-        eq(workChapterEntity.workId, workEntity.id),
-      )
+      .innerJoin(workChapterEntity, eq(workChapterEntity.workId, workEntity.id))
       .where(
         and(
           eq(workEntity.slug, workSlug),
@@ -224,6 +205,13 @@ export class WebRepository {
         ),
       )
       .limit(1);
-    return row ?? { workId: '', chapterId: '', chapterSecuence: '', chapterTitle: '' };
+    return (
+      row ?? {
+        workId: '',
+        chapterId: '',
+        chapterSecuence: '',
+        chapterTitle: '',
+      }
+    );
   }
 }

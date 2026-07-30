@@ -222,71 +222,6 @@ export class WorksService {
     return this.toWorkResult(updated, DEFAULT_COVER_VARIANT);
   }
 
-  async updateCover(
-    id: string,
-    userId: string,
-    file?: Express.Multer.File,
-  ): Promise<WorkResult> {
-    const work = await this.worksRepository.findByIdAndUserId(id, userId);
-    if (!work) {
-      throw new AppException('WORK_NOT_FOUND', { id, userId });
-    }
-
-    if (!file) {
-      throw new AppException('WORK_COVER_FILE_MISSING', { id, userId });
-    }
-
-    if (!COVER_ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      throw new AppException('WORK_COVER_UNSUPPORTED_TYPE', {
-        id,
-        userId,
-        mimetype: file.mimetype,
-      });
-    }
-
-    const { width, height } = await this.imageProcessorService.getDimensions(
-      file.buffer,
-    );
-    const aspectRatio = width / height;
-    if (
-      aspectRatio < COVER_MIN_ASPECT_RATIO ||
-      aspectRatio > COVER_MAX_ASPECT_RATIO
-    ) {
-      throw new AppException('WORK_COVER_INVALID_ASPECT_RATIO', {
-        id,
-        userId,
-        width,
-        height,
-        aspectRatio,
-      });
-    }
-
-    const variants = await this.imageProcessorService.generateCoverVariants(
-      file.buffer,
-    );
-
-    // Ruta determinística: un re-upload pisa la portada anterior (upsert)
-    // en vez de acumular archivos huérfanos en el bucket. Todas las
-    // variantes se guardan como WebP, sin conservar el archivo original.
-    await Promise.all(
-      IMAGE_VARIANT_NAMES.map((name) => {
-        const variant = variants[name];
-        const path = `works/${id}/cover/${name}.${variant.extension}`;
-        return this.supabaseStorageProvider.upload(
-          path,
-          variant.buffer,
-          variant.contentType,
-        );
-      }),
-    );
-
-    // Se re-firma ya mismo (no se espera a la próxima lectura): el usuario
-    // acaba de subir la portada y espera verla al toque, y de paso el nuevo
-    // token de la signed URL rompe cachés de navegador/CDN sobre la misma
-    // ruta (el path no cambia por el upsert, pero el token sí).
-    const updated = await this.refreshCoverUrls(id);
-    return this.toWorkResult(updated, DEFAULT_COVER_VARIANT);
-  }
 
   async delete(id: string, userId: string): Promise<void> {
     const work = await this.worksRepository.findByIdAndUserId(id, userId);
@@ -305,19 +240,6 @@ export class WorksService {
     // el usuario puede volver a intentar el borrado sin perder sus datos.
     await this.supabaseStorageProvider.remove(storagePaths);
     await this.worksRepository.deleteWithChapters(id);
-  }
-
-  async getContent(id: string, userId: string): Promise<{ content: string | null }> {
-    await this.assertPoemOwned(id, userId);
-    return { content: await this.supabaseStorageProvider.downloadText(`works/${id}/poem.html`) };
-  }
-
-  async uploadContent(id: string, userId: string, file?: Express.Multer.File): Promise<{ content: string | null }> {
-    await this.assertPoemOwned(id, userId);
-    if (!file) throw new AppException('WORK_COVER_FILE_MISSING', { id, userId });
-    if (file.mimetype !== 'text/html') throw new AppException('WORK_COVER_UNSUPPORTED_TYPE', { id, userId, mimetype: file.mimetype });
-    await this.supabaseStorageProvider.upload(`works/${id}/poem.html`, file.buffer, 'text/html');
-    return { content: await this.supabaseStorageProvider.downloadText(`works/${id}/poem.html`) };
   }
 
   private async assertPoemOwned(id: string, userId: string): Promise<void> {

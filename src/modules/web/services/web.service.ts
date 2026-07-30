@@ -13,7 +13,7 @@ import { PublishedWorkSort } from '@/modules/works/types/published-work-sort.enu
 
 const PAGE_DATA_CACHE_KEY = 'web:page-data';
 const PAGE_DATA_CACHE_TTL_MS = 60_000; // 1minuto
-const WORK_NOT_FOUND_CACHE_TTL_MS = 180_000; // 3 minutos 
+const WORK_NOT_FOUND_CACHE_TTL_MS = 180_000; // 3 minutos
 
 @Injectable()
 export class WebService {
@@ -30,7 +30,7 @@ export class WebService {
       await this.cacheManager.get<PageData>(PAGE_DATA_CACHE_KEY);
 
     if (cachedData) return cachedData;
-    
+
     const [sponsorBanner, themes, genres, lastWorks] = await Promise.all([
       this.webRepository.getSponsorBannerData(),
       this.webRepository.getThemes(),
@@ -63,12 +63,12 @@ export class WebService {
     return pageData;
   }
 
-  async getWork(slug: string) {
+  async getWorkInfo(slug: string) {
     const WORK_NOT_FOUND_VALUE = '__NOT_FOUND__';
 
     const cacheKey = `web:work:${slug}`;
 
-    const cachedData = await this.cacheManager.get(cacheKey);  
+    const cachedData = await this.cacheManager.get(cacheKey);
 
     if (cachedData === WORK_NOT_FOUND_VALUE) {
       throw new AppException('WORK_NOT_FOUND', { slug });
@@ -85,15 +85,15 @@ export class WebService {
       throw new AppException('WORK_NOT_FOUND', { slug });
     }
 
-    //si la obra es un poema, hay que devolver el content
+    // si la obra es un poema, hay que devolver el content
     let text: null | string = null;
-    //🔥 TODO: identifiers, magic strings ta muy gacho esto aca que poema, almenos un enum pudiera ser
-    if (work.genreName == "Poema") {
-      text = await this.privateStorageService.downloadText(`works/${work.id}/poem.html`);
+    //🔥 TODO:magic strings ta muy gacho esto aca que poema, almenos un enum pudiera ser
+    if (work.genreSlug == 'poema') {
+      text = await this.privateStorageService.downloadText(
+        `works/${work.id}/poem.html`,
+      );
     }
     // FALTA--- Otras obras, otros procesos
-
-
     //🔥 TODO: implement revalidate cache instead of ttls minutes
     /**
      * Mejor todavía: invalidar la caché cuando haya cambios
@@ -108,46 +108,62 @@ export class WebService {
 
     return { ...work, text };
   }
-  
-  async findByQuery({ 
+
+  async findByQuery({
     search,
     themeSlug,
     genreSlug,
-    sort
+    sort,
   }: {
     search?: string;
     themeSlug?: string;
     genreSlug?: string;
-    sort?: PublishedWorkSort
+    sort?: PublishedWorkSort;
   }) {
-    return await this.webRepository.findByQuery({ search, themeSlug, genreSlug, sort });
+    return await this.webRepository.findByQuery({
+      search,
+      themeSlug,
+      genreSlug,
+      sort,
+    });
   }
 
   async findChapterContent(workSlug: string, chapterSlug: string) {
     const WORK_NOT_FOUND_VALUE = '__NOT_FOUND__';
     const cacheKey = `web:work:${workSlug}:${chapterSlug}`;
 
-    const cachedData = await this.cacheManager.get(cacheKey);  
+    const cachedData = await this.cacheManager.get(cacheKey);
 
     if (cachedData === WORK_NOT_FOUND_VALUE) {
-      throw new AppException('WEB_CONTENT_NOT_FOUND_FOR_SLUGS', { workSlug, chapterSlug });
+      throw new AppException('WEB_CONTENT_NOT_FOUND_FOR_SLUGS', {
+        workSlug,
+        chapterSlug,
+      });
     }
     if (cachedData) return cachedData;
 
-    const { workId, chapterId, chapterSecuence, chapterTitle } = await this.webRepository.findWorkAndChapterIdsBySlugs(workSlug, chapterSlug);
+    const { workId, chapterId, chapterSecuence, chapterTitle } =
+      await this.webRepository.findWorkAndChapterIdsBySlugs(
+        workSlug,
+        chapterSlug,
+      );
     if (!workId || !chapterId) {
       await this.cacheManager.set(
-        cacheKey,       
+        cacheKey,
         WORK_NOT_FOUND_VALUE,
         PAGE_DATA_CACHE_TTL_MS,
       );
-      throw new AppException('WEB_CONTENT_NOT_FOUND_FOR_SLUGS', { workSlug, chapterSlug });
+      throw new AppException('WEB_CONTENT_NOT_FOUND_FOR_SLUGS', {
+        workSlug,
+        chapterSlug,
+      });
     }
-    const content = await this.privateStorageService.downloadText(`works/${workId}/chapters/${chapterId}.html`);
-
+    const content = await this.privateStorageService.downloadText(
+      `works/${workId}/chapters/${chapterId}.html`,
+    );
 
     await this.cacheManager.set(
-      cacheKey,       
+      cacheKey,
       {
         title: chapterTitle,
         sequence: chapterSecuence,

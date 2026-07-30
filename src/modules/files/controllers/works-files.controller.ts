@@ -23,6 +23,7 @@ const MAX_CONTENT_SIZE_BYTES = 5 * 1024 * 1024; // 5MiB
 export class WorksFilesController {
   constructor(private readonly worksFilesService: WorksFilesService) {}
 
+  // Subir la portada de una obra
   @Post(':id/cover')
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: MAX_COVER_SIZE_BYTES } }),
@@ -37,6 +38,7 @@ export class WorksFilesController {
     return { ok: true };
   }
 
+  // Subir el contenido de una obra
   @Post(':id/content')
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: MAX_CONTENT_SIZE_BYTES } }),
@@ -51,4 +53,6 @@ export class WorksFilesController {
     await this.worksFilesService.uploadContent(id, user.id, info, file);
     return { ok: true };
   }
+
+  // controller para obtener el contenido de una obra
 }
