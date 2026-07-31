@@ -1,3 +1,0 @@
-allowBuilds:
-  '@nestjs/core': false
-  esbuild: false
