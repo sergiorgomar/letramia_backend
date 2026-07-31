@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { type SQL, desc, and, eq, or, ilike, asc, ne, sql } from 'drizzle-orm';
 import { DATABASE_PROVIDER } from '@/common/constants';
@@ -14,16 +15,22 @@ import { PublishedWorkSort } from '@/modules/works/types/published-work-sort.enu
 
 @Injectable()
 export class WebRepository {
+  private PUBLIC_BUCKET_URL = '';
+
   constructor(
     @Inject(DATABASE_PROVIDER) private readonly db: PostgresJsDatabase,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    this.PUBLIC_BUCKET_URL =
+      this.config.getOrThrow<string>('PUBLIC_BUCKET_URL');
+  }
 
   @HandleErrors('DATABASE_ERROR')
   async getSponsorBannerData() {
     const works = await this.db
       .select({
+        id: workEntity.id,
         workSlug: workEntity.slug,
-        coverLargeUrl: workEntity.coverLargeUrl,
         title: workEntity.title,
         publishedAt: workEntity.createdAt, //🔥 TODO: works needs published at date
         synopsis: workEntity.synopsis,
@@ -51,12 +58,12 @@ export class WebRepository {
     return works.map((w) => ({
       slug: w.workSlug,
       title: w.title,
-      imageUrl: w.coverLargeUrl,
       publishedAt: w.publishedAt,
       authorName: w.authorName,
       synopsis: w.synopsis,
       genreName: w.genreName,
       themeName: w.themeName,
+      imageUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
     }));
   }
 
@@ -84,8 +91,8 @@ export class WebRepository {
   async getLastWorks() {
     const lastWorks = await this.db
       .select({
+        id: workEntity.id,
         workSlug: workEntity.slug,
-        coverUrl: workEntity.coverThumbUrl,
         synopsis: workEntity.synopsis,
         title: workEntity.title,
         authorName: userEntity.name,
@@ -114,7 +121,7 @@ export class WebRepository {
       slug: w.workSlug,
       title: w.title,
       synopsis: w.synopsis,
-      coverUrl: w.coverUrl,
+      coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
       genreName: w.genreName,
       themeName: w.themeName,
       authorName: w.authorName,
@@ -131,7 +138,6 @@ export class WebRepository {
         synopsis: workEntity.synopsis,
         //🔥 TODO: date of published is requiered
         publishedAt: workEntity.updatedAt,
-        coverUrl: workEntity.coverSmallUrl,
         themeName: workThemeEntity.name,
         themeSlug: workThemeEntity.slug,
         genreName: workGenreEntity.name,
@@ -168,6 +174,7 @@ export class WebRepository {
       .orderBy(asc(workChapterEntity.sequence));
     return {
       ...work,
+      coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/small.webp`,
       chapterCount: chapters.length,
       chapters,
     };
@@ -213,10 +220,10 @@ export class WebRepository {
         : desc(workEntity.createdAt);
     const works = await this.db
       .select({
+        id: workEntity.id,
         slug: workEntity.slug,
         title: workEntity.title,
         synopsis: workEntity.synopsis,
-        thumbCoverUrl: workEntity.coverThumbUrl,
         //publishedAt: workEntity.updatedAt,
         theme: workThemeEntity.name,
         genre: workGenreEntity.name,
@@ -229,7 +236,10 @@ export class WebRepository {
       .where(and(...filters))
       .orderBy(orderBy)
       .limit(100);
-    return works;
+    return works.map((w) => ({
+      ...w,
+      thumbCoverUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
+    }));
   }
 
   @HandleErrors('DATABASE_ERROR')

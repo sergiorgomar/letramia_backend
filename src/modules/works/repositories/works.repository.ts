@@ -6,6 +6,7 @@ import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 import { workEntity } from '../entities/work.entity';
 import { workThemeEntity } from '../entities/work-theme.entity';
 import { workGenreEntity } from '../entities/work-genre.entity';
+import { ConfigService } from '@nestjs/config';
 
 export type WorkEntity = typeof workEntity.$inferSelect;
 export type CreateWorkEntity = {
@@ -24,36 +25,50 @@ export type UpdateWorkEntity = {
   synopsis?: string | null;
 };
 export class WorksRepository {
+  private PUBLIC_BUCKET_URL = '';
   constructor(
     @Inject(DATABASE_PROVIDER) private readonly db: PostgresJsDatabase,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    this.PUBLIC_BUCKET_URL =
+      this.config.getOrThrow<string>('PUBLIC_BUCKET_URL');
+  }
 
   @HandleErrors('DATABASE_ERROR')
   async findAllByUserId(userId: string) {
-    return this.db
+    const works = await this.db
       .select({
         id: workEntity.id,
         title: workEntity.title,
         status: workEntity.status,
-        coverUrl: workEntity.coverThumbUrl,
       })
       .from(workEntity)
       .where(eq(workEntity.userId, userId));
+
+    return works.map((work) => ({
+      ...work,
+      coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/thumb.webp`,
+    }));
   }
 
   @HandleErrors('DATABASE_ERROR')
   async findByIdAndUserId(id: string, userId: string) {
-    const [row] = await this.db
+    const [work] = await this.db
       .select({
         id: workEntity.id,
         title: workEntity.title,
         status: workEntity.status,
-        coverUrl: workEntity.coverMediumUrl,
       })
       .from(workEntity)
       .where(and(eq(workEntity.id, id), eq(workEntity.userId, userId)))
       .limit(1);
-    return row;
+
+    if (!work) return undefined;
+
+    return {
+      ...work,
+      coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/medium.webp`,
+    };
   }
 
   @HandleErrors('DATABASE_ERROR')
