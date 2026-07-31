@@ -63,6 +63,7 @@ export class WebRepository {
       synopsis: w.synopsis,
       genreName: w.genreName,
       themeName: w.themeName,
+      // 🔥 TODO: thumb.wepb -- magic string
       imageUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
     }));
   }
@@ -121,6 +122,7 @@ export class WebRepository {
       slug: w.workSlug,
       title: w.title,
       synopsis: w.synopsis,
+      // 🔥 TODO: thumb.wepb -- magic string
       coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
       genreName: w.genreName,
       themeName: w.themeName,
@@ -174,6 +176,7 @@ export class WebRepository {
       .orderBy(asc(workChapterEntity.sequence));
     return {
       ...work,
+      // 🔥 TODO: thumb.wepb -- magic string
       coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/small.webp`,
       chapterCount: chapters.length,
       chapters,
@@ -238,6 +241,7 @@ export class WebRepository {
       .limit(100);
     return works.map((w) => ({
       ...w,
+      // 🔥 TODO: thumb.wepb -- magic string
       thumbCoverUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
     }));
   }

@@ -47,6 +47,7 @@ export class WorksRepository {
 
     return works.map((work) => ({
       ...work,
+      // 🔥 TODO: thumb.wepb -- magic string
       coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/thumb.webp`,
     }));
   }
@@ -67,6 +68,7 @@ export class WorksRepository {
 
     return {
       ...work,
+      // 🔥 TODO: medium.wepb -- magic string
       coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/medium.webp`,
     };
   }
