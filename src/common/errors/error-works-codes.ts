@@ -28,7 +28,7 @@ export const WORKS_ERROR_CATALOG = {
   WORK_COVER_UNSUPPORTED_TYPE: {
     code: 'WORK-0005',
     status: 400,
-    message: 'Formato de imagen no soportado. Usá JPG, PNG o WEBP.',
+    message: 'Formato de imagen no soportado.',
     internalMessage:
       'El mimetype del archivo no está en la whitelist de portadas',
   },

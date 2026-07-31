@@ -1,10 +1,21 @@
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsDate,
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
+  IsUrl,
+  ValidateNested,
 } from 'class-validator';
+
+export class ChapterDTO {
+  @IsString()
+  slug: string;
+
+  @IsString()
+  title: string;
+}
 
 export class WorkResponseDto {
   @IsString()
@@ -24,10 +35,25 @@ export class WorkResponseDto {
   genreName: string;
 
   @IsString()
+  themeSlug: string;
+
+  @IsString()
+  genreSlug: string;
+
+  @IsString()
   authorName: string;
 
   @IsNumber()
   chapterCount: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ChapterDTO)
+  chapters: ChapterDTO[];
+
+  @IsUrl()
+  @IsOptional()
+  coverUrl: string;
 
   @IsString()
   @IsOptional()

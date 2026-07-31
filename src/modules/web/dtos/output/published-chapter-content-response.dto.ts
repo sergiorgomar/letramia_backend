@@ -1,13 +1,36 @@
-import { IsInt, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsInt, IsOptional, IsString } from 'class-validator';
 
 export class PublishedChapterContentResponseDto {
   @IsString()
-  title: string;
+  workSlug: string;
 
   @IsInt()
-  sequence: number;
+  totalChapters: number;
+
+  @IsString()
+  bookThemeName: string;
+
+  @IsString()
+  bookThemeSlug: string;
+
+  @IsString()
+  authorName: string;
+
+  @IsString()
+  chapterTitle: string;
+
+  @IsInt()
+  chapterSequence: number;
 
   @IsString()
   @IsOptional()
-  content: string | null;
+  nextChapterSlug: string | null;
+
+  @IsString()
+  @IsOptional()
+  previousChapterSlug: string | null;
+
+  @IsString()
+  @IsOptional()
+  chapterContent: string | null;
 }

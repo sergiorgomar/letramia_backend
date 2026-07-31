@@ -21,6 +21,7 @@ export const workEntity = pgTable(
   'works',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    //🔥 todo: maybe change to author id
     userId: uuid('user_id')
       .notNull()
       .references(() => userEntity.id),

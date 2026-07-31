@@ -3,13 +3,14 @@ import {
   IsArray,
   IsOptional,
   IsString,
-  IsUUID,
+  IsDate,
   IsUrl,
   ValidateNested,
 } from 'class-validator';
 
 export class SponsorBannerDTO {
   @IsUrl()
+  @IsOptional()
   imageUrl: string;
 
   @IsString()
@@ -17,19 +18,35 @@ export class SponsorBannerDTO {
 
   @IsString()
   slug: string;
+
+  @IsString()
+  authorName: string;
+
+  @IsDate()
+  publishedAt: Date;
+
+  @IsString()
+  @IsOptional()
+  synopsis: string;
+
+  @IsString()
+  genreName: string;
+
+  @IsString()
+  themeName: string;
 }
 
 export class ThemeDTO {
-  @IsUUID()
-  id: string;
+  @IsString()
+  slug: string;
 
   @IsString()
   name: string;
 }
 
 export class GenreDTO {
-  @IsUUID()
-  id: string;
+  @IsString()
+  slug: string;
 
   @IsString()
   name: string;
@@ -46,8 +63,20 @@ export class LastWorkDTO {
   @IsOptional()
   synopsis: string | null;
 
+  @IsString()
+  authorName: string;
+
+  @IsString()
+  themeName: string;
+
+  @IsString()
+  genreName: string;
+
+  @IsDate()
+  publishedAt: Date;
+
   @IsOptional()
-  thumbCoverUrl: string | null;
+  coverUrl: string | null;
 }
 
 export class PageDataDTO {

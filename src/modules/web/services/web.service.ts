@@ -142,11 +142,23 @@ export class WebService {
     }
     if (cachedData) return cachedData;
 
-    const { workId, chapterId, chapterSecuence, chapterTitle } =
-      await this.webRepository.findWorkAndChapterIdsBySlugs(
-        workSlug,
-        chapterSlug,
-      );
+    const {
+      workId,
+      chapterId,
+      workSlug: publishedWorkSlug,
+      totalChapters,
+      bookThemeName,
+      bookThemeSlug,
+      authorName,
+      chapterTitle,
+      chapterSequence,
+      nextChapterSlug,
+      previousChapterSlug,
+    } = await this.webRepository.findWorkAndChapterIdsBySlugs(
+      workSlug,
+      chapterSlug,
+    );
+
     if (!workId || !chapterId) {
       await this.cacheManager.set(
         cacheKey,
@@ -162,20 +174,25 @@ export class WebService {
       `works/${workId}/chapters/${chapterId}.html`,
     );
 
+    const chapterContent = {
+      workSlug: publishedWorkSlug,
+      totalChapters,
+      bookThemeName,
+      bookThemeSlug,
+      authorName,
+      chapterTitle,
+      chapterSequence,
+      nextChapterSlug,
+      previousChapterSlug,
+      chapterContent: content,
+    };
+
     await this.cacheManager.set(
       cacheKey,
-      {
-        title: chapterTitle,
-        sequence: chapterSecuence,
-        content,
-      },
+      chapterContent,
       PAGE_DATA_CACHE_TTL_MS,
     );
 
-    return {
-      title: chapterTitle,
-      sequence: chapterSecuence,
-      content,
-    };
+    return chapterContent;
   }
 }

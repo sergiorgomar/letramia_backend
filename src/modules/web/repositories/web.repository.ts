@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { type SQL, desc, and, eq, sql, or, ilike, asc } from 'drizzle-orm';
+import { type SQL, desc, and, eq, or, ilike, asc, ne, sql } from 'drizzle-orm';
 import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 
@@ -12,11 +12,6 @@ import { WorkStatus } from '@/modules/works/types/work-status.enum';
 import { workChapterEntity } from '@/modules/works/entities/work-chapter.entity';
 import { PublishedWorkSort } from '@/modules/works/types/published-work-sort.enum';
 
-import { SponsorBanner } from '../types/sponsor-banner.type';
-import { Themes } from '../types/themes.type';
-import { Genres } from '../types/genres.type';
-import { LastWorks } from '../types/last-works.type';
-
 @Injectable()
 export class WebRepository {
   constructor(
@@ -24,14 +19,32 @@ export class WebRepository {
   ) {}
 
   @HandleErrors('DATABASE_ERROR')
-  async getSponsorBannerData(): Promise<SponsorBanner> {
+  async getSponsorBannerData() {
     const works = await this.db
       .select({
         workSlug: workEntity.slug,
         coverLargeUrl: workEntity.coverLargeUrl,
         title: workEntity.title,
+        publishedAt: workEntity.createdAt, //🔥 TODO: works needs published at date
+        synopsis: workEntity.synopsis,
+        authorName: userEntity.name,
+        themeName: workThemeEntity.name,
+        genreName: workGenreEntity.name,
       })
       .from(workEntity)
+      .innerJoin(userEntity, eq(workEntity.userId, userEntity.id))
+      .innerJoin(
+        workThemeEntity,
+        eq(workEntity.workThemeId, workThemeEntity.id),
+      )
+      .innerJoin(
+        workGenreEntity,
+        and(
+          eq(workEntity.workGenreId, workGenreEntity.id),
+          ne(workGenreEntity.slug, 'poema'),
+        ),
+      )
+      .where(eq(workEntity.status, WorkStatus.PUBLISHED))
       .orderBy(desc(workEntity.createdAt))
       .limit(5);
 
@@ -39,72 +52,91 @@ export class WebRepository {
       slug: w.workSlug,
       title: w.title,
       imageUrl: w.coverLargeUrl,
+      publishedAt: w.publishedAt,
+      authorName: w.authorName,
+      synopsis: w.synopsis,
+      genreName: w.genreName,
+      themeName: w.themeName,
     }));
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async getThemes(): Promise<Themes> {
+  async getThemes() {
     return await this.db
       .select({
-        id: workThemeEntity.id,
+        slug: workThemeEntity.slug,
         name: workThemeEntity.name,
       })
       .from(workThemeEntity);
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async getGenres(): Promise<Genres> {
+  async getGenres() {
     return await this.db
       .select({
-        id: workGenreEntity.id,
+        slug: workGenreEntity.slug,
         name: workGenreEntity.name,
       })
       .from(workGenreEntity);
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async getLastWorks(): Promise<LastWorks> {
+  async getLastWorks() {
     const lastWorks = await this.db
       .select({
         workSlug: workEntity.slug,
-        coverThumbUrl: workEntity.coverThumbUrl,
+        coverUrl: workEntity.coverThumbUrl,
         synopsis: workEntity.synopsis,
         title: workEntity.title,
+        authorName: userEntity.name,
+        genreName: workGenreEntity.name,
+        themeName: workThemeEntity.name,
+        publishedAt: workEntity.createdAt, //🔥 TODO: publisued at
       })
       .from(workEntity)
       .where(eq(workEntity.status, WorkStatus.PUBLISHED))
+      .innerJoin(
+        workGenreEntity,
+        and(
+          eq(workEntity.workGenreId, workGenreEntity.id),
+          ne(workGenreEntity.slug, 'poema'),
+        ),
+      )
+      .innerJoin(
+        workThemeEntity,
+        eq(workEntity.workThemeId, workThemeEntity.id),
+      )
+      .innerJoin(userEntity, eq(workEntity.userId, userEntity.id))
       .orderBy(desc(workEntity.createdAt))
-      .limit(100);
+      .limit(6);
 
     return lastWorks.map((w) => ({
       slug: w.workSlug,
       title: w.title,
       synopsis: w.synopsis,
-      thumbCoverUrl: w.coverThumbUrl,
+      coverUrl: w.coverUrl,
+      genreName: w.genreName,
+      themeName: w.themeName,
+      authorName: w.authorName,
+      publishedAt: w.publishedAt,
     }));
   }
 
   @HandleErrors('DATABASE_ERROR')
   async findPublishedWork(slug: string) {
-    const [row] = await this.db
+    const [work] = await this.db
       .select({
         id: workEntity.id,
         title: workEntity.title,
         synopsis: workEntity.synopsis,
         //🔥 TODO: date of published is requiered
         publishedAt: workEntity.updatedAt,
+        coverUrl: workEntity.coverSmallUrl,
         themeName: workThemeEntity.name,
         themeSlug: workThemeEntity.slug,
         genreName: workGenreEntity.name,
         genreSlug: workGenreEntity.slug,
         authorName: userEntity.name,
-        chapterCount: sql<number>`
-          (
-            SELECT COUNT(*)
-            FROM ${workChapterEntity}
-            WHERE ${workChapterEntity.workId} = ${workEntity.id}
-          )
-        `.mapWith(Number),
       })
       .from(workEntity)
       .innerJoin(
@@ -116,7 +148,6 @@ export class WebRepository {
         eq(workGenreEntity.id, workEntity.workGenreId),
       )
       .innerJoin(userEntity, eq(userEntity.id, workEntity.userId))
-      .leftJoin(workChapterEntity, eq(workChapterEntity.workId, workEntity.id))
       .where(
         and(
           eq(workEntity.slug, slug),
@@ -124,7 +155,22 @@ export class WebRepository {
         ),
       )
       .limit(1);
-    return row;
+
+    if (!work) return null;
+
+    const chapters = await this.db
+      .select({
+        slug: workChapterEntity.slug,
+        title: workChapterEntity.title,
+      })
+      .from(workChapterEntity)
+      .where(eq(workChapterEntity.workId, work.id))
+      .orderBy(asc(workChapterEntity.sequence));
+    return {
+      ...work,
+      chapterCount: chapters.length,
+      chapters,
+    };
   }
 
   @HandleErrors('DATABASE_ERROR')
@@ -191,12 +237,48 @@ export class WebRepository {
     const [row] = await this.db
       .select({
         workId: workEntity.id,
+        workSlug: workEntity.slug,
         chapterId: workChapterEntity.id,
-        chapterSecuence: workChapterEntity.sequence,
+        chapterSequence: workChapterEntity.sequence,
         chapterTitle: workChapterEntity.title,
+        nextChapterSlug: sql<string | null>`
+          (
+            SELECT next_chapter.slug
+            FROM ${workChapterEntity} AS next_chapter
+            WHERE next_chapter.work_id = ${workEntity.id}
+              AND next_chapter.sequence > ${workChapterEntity.sequence}
+            ORDER BY next_chapter.sequence ASC
+            LIMIT 1
+          )
+        `,
+        previousChapterSlug: sql<string | null>`
+          (
+            SELECT previous_chapter.slug
+            FROM ${workChapterEntity} AS previous_chapter
+            WHERE previous_chapter.work_id = ${workEntity.id}
+              AND previous_chapter.sequence < ${workChapterEntity.sequence}
+            ORDER BY previous_chapter.sequence DESC
+            LIMIT 1
+          )
+        `,
+        totalChapters: sql<number>`
+          (
+            SELECT COUNT(*)
+            FROM ${workChapterEntity} AS chapter_count
+            WHERE chapter_count.work_id = ${workEntity.id}
+          )
+        `.mapWith(Number),
+        bookThemeName: workThemeEntity.name,
+        bookThemeSlug: workThemeEntity.slug,
+        authorName: userEntity.name,
       })
       .from(workEntity)
       .innerJoin(workChapterEntity, eq(workChapterEntity.workId, workEntity.id))
+      .innerJoin(
+        workThemeEntity,
+        eq(workThemeEntity.id, workEntity.workThemeId),
+      )
+      .innerJoin(userEntity, eq(userEntity.id, workEntity.userId))
       .where(
         and(
           eq(workEntity.slug, workSlug),
@@ -205,13 +287,6 @@ export class WebRepository {
         ),
       )
       .limit(1);
-    return (
-      row ?? {
-        workId: '',
-        chapterId: '',
-        chapterSecuence: '',
-        chapterTitle: '',
-      }
-    );
+    return row;
   }
 }
