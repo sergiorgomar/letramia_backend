@@ -5,6 +5,7 @@ import {
   varchar,
   text,
   timestamp,
+  integer,
   // index,
 } from 'drizzle-orm/pg-core';
 import { userEntity } from '@/modules/accounts/entities/user.entity';
@@ -34,10 +35,15 @@ export const workEntity = pgTable(
     title: varchar('title', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 280 }).notNull().unique(),
     synopsis: text('synopsis'),
+
+    wordCount: integer('word_count').notNull().default(0),
+    characterCount: integer('character_count').notNull().default(0),
+
     // Toda obra nace como borrador; solo se ve en la web al publicarla.
     status: workStatusEnum('status').notNull().default(WorkStatus.DRAFT),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    //publishedAt: timestamp('published_at').notNull().defaultNow(),
   },
   // 🔥 TODO: reivsar esta implementación, estudiar los indices
   // (table) => ({

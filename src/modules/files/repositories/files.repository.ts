@@ -1,18 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { eq } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 
 import { workGenreEntity } from '@/modules/works/entities/work-genre.entity';
 import { workEntity } from '@/modules/works/entities/work.entity';
+import { workChapterEntity } from '@/modules/works/entities/work-chapter.entity';
 
-export type UpdateCoverUrls = {
-  coverThumbUrl: string;
-  coverSmallUrl: string;
-  coverMediumUrl: string;
-  coverLargeUrl: string;
-};
 @Injectable()
 export class FilesRepository {
   constructor(
@@ -20,25 +15,74 @@ export class FilesRepository {
   ) {}
 
   @HandleErrors('DATABASE_ERROR')
-  async findGenreSlugById(genreId: string): Promise<string | null> {
-    const [genre] = await this.db
-      .select({
-        slug: workGenreEntity.slug,
-      })
-      .from(workGenreEntity)
-      .where(eq(workGenreEntity.id, genreId))
+  async findWorkByIdAndUserId(id: string, userId: string) {
+    const [work] = await this.db
+      .select({ id: workEntity.id })
+      .from(workEntity)
+      .where(and(eq(workEntity.id, id), eq(workEntity.userId, userId)))
       .limit(1);
 
-    return genre?.slug ?? null;
+    return work;
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async updateCoverUrls(id: string, urls: UpdateCoverUrls) {
+  async findWorkContentByIdAndUserId(
+    workId: string,
+    userId: string,
+    chapterId,
+  ) {
+    const [work] = await this.db
+      .select({
+        id: workEntity.id,
+        genreSlug: workGenreEntity.slug,
+        chapterId: workChapterEntity.id,
+      })
+      .from(workEntity)
+      .innerJoin(
+        workGenreEntity,
+        eq(workGenreEntity.id, workEntity.workGenreId),
+      )
+      .leftJoin(
+        workChapterEntity,
+        chapterId
+          ? and(
+              eq(workChapterEntity.id, chapterId),
+              eq(workChapterEntity.workId, workEntity.id),
+            )
+          : sql`false`,
+      )
+      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
+      .limit(1);
+
+    return work;
+  }
+
+  @HandleErrors('DATABASE_ERROR')
+  async updateWorkStats(
+    workId: string,
+    wordCount: number,
+    characterCount: number,
+  ) {
     const [row] = await this.db
       .update(workEntity)
       //🔥 TODO: Dates validations UTC-6 or timestamp
-      .set({ ...urls, updatedAt: new Date() })
-      .where(eq(workEntity.id, id))
+      .set({ wordCount, characterCount, updatedAt: new Date() })
+      .where(eq(workEntity.id, workId))
+      .returning();
+    return row;
+  }
+
+  @HandleErrors('DATABASE_ERROR')
+  async updateChapterStats(
+    chapterEntity: string,
+    wordCount: number,
+    characterCount: number,
+  ) {
+    const [row] = await this.db
+      .update(workChapterEntity)
+      //🔥 TODO: Dates validations UTC-6 or timestamp
+      .set({ wordCount, characterCount, updatedAt: new Date() })
+      .where(eq(workChapterEntity.id, chapterEntity))
       .returning();
     return row;
   }

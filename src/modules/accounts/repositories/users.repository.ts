@@ -39,9 +39,13 @@ export class UsersRepository {
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async findByEmail(email: string): Promise<UserEntity | undefined> {
+  async findByEmail(email: string) {
     const [row] = await this.db
-      .select()
+      .select({
+        id: userEntity.id,
+        name: userEntity.name,
+        active: userEntity.active,
+      })
       .from(userEntity)
       .where(eq(userEntity.email, email))
       .limit(1);

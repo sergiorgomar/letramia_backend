@@ -1,7 +1,7 @@
 export type CreateWork = {
   userId: string;
   title: string;
-  workThemeId: string;
-  workGenreId: string;
+  workThemeSlug: string;
+  workGenreSlug: string;
   synopsis?: string;
 };

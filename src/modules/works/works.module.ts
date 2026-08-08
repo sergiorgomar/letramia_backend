@@ -14,6 +14,6 @@ import { WorkChaptersRepository } from './repositories/work-chapters.repository'
     WorkChaptersRepository,
     WorkChaptersService,
   ],
-  exports: [WorksRepository, WorkChaptersRepository],
+  exports: [WorksRepository],
 })
 export class WorksModule {}

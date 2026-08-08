@@ -15,6 +15,9 @@ import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
 import { WorksFilesService } from '../services/works-files.service';
 import { UploadWorkCoverDTO } from '../dtos/output/upload-work-cover.dto';
 import { UploadWorkContentDTO } from '../dtos/output/upload-work-content.dto';
+import { GetWorkManuscriptDTO } from '../dtos/input/get-work-manuscript.dto';
+import { isUUID } from 'class-validator';
+import { AppException } from '@/common/exceptions/app.exception';
 
 const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024; // 5MiB
 const MAX_CONTENT_SIZE_BYTES = 5 * 1024 * 1024; // 5MiB
@@ -47,12 +50,32 @@ export class WorksFilesController {
   async uploadContent(
     @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file,
-    @Body('info') info: string,
+    @Body('chapterId') chapterId: string,
     @CurrentUser() user: RequestUser,
   ) {
-    await this.worksFilesService.uploadContent(id, user.id, info, file);
+    if (chapterId && !isUUID(chapterId, '4')) {
+      throw new AppException('WORK_CHAPTER_NOT_UUID', { chapterId });
+    }
+    await this.worksFilesService.uploadContent(id, user.id, chapterId, file);
     return { ok: true };
   }
 
   // controller para obtener el contenido de una obra
+  @Post(':workId/get-manuscript')
+  @ResponseDto(GetWorkManuscriptDTO, 'Manuscrito obtenido con éxito')
+  async getContent(
+    @Param('workId', ParseUUIDPipe) workId: string,
+    @Body('chapterId') chapterId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    if (chapterId && !isUUID(chapterId, '4')) {
+      throw new AppException('WORK_CHAPTER_NOT_UUID', { chapterId });
+    }
+    const manuscript = await this.worksFilesService.getManuscript(
+      workId,
+      user.id,
+      chapterId,
+    );
+    return { manuscript };
+  }
 }

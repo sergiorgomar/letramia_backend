@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { SupabaseAdminProvider } from './supabase-admin.provider';
 import { SupabaseAnonProvider } from './supabase-anon.provider';
 import { SupabaseStorageProvider } from './supabase-storage.provider';
+import { LocalStorageProvider } from './local-storage.provider';
 import {
   SUPABASE_ADMIN_PROVIDER,
   PRIVATE_STORAGE,
@@ -19,20 +20,26 @@ import { SupabaseClient } from '@supabase/supabase-js';
       provide: PRIVATE_STORAGE,
       inject: [SUPABASE_ADMIN_PROVIDER, ConfigService],
       useFactory: (supabase: SupabaseClient, config: ConfigService) => {
-        return new SupabaseStorageProvider(
-          supabase,
-          config.get<string>('SUPABASE_PRIVATE_BUCKET')!,
-        );
+        const useLocalStorage = config.get('STORAGE_DRIVER') === 'local';
+        return useLocalStorage
+          ? new LocalStorageProvider('private')
+          : new SupabaseStorageProvider(
+              supabase,
+              config.get<string>('SUPABASE_PRIVATE_BUCKET')!,
+            );
       },
     },
     {
       provide: PUBLIC_STORAGE,
       inject: [SUPABASE_ADMIN_PROVIDER, ConfigService],
       useFactory: (supabase: SupabaseClient, config: ConfigService) => {
-        return new SupabaseStorageProvider(
-          supabase,
-          config.get<string>('SUPABASE_PUBLIC_BUCKET')!,
-        );
+        const useLocalStorage = config.get('STORAGE_DRIVER') === 'local';
+        return useLocalStorage
+          ? new LocalStorageProvider('public')
+          : new SupabaseStorageProvider(
+              supabase,
+              config.get<string>('SUPABASE_PUBLIC_BUCKET')!,
+            );
       },
     },
   ],

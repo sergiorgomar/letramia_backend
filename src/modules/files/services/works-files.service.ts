@@ -5,11 +5,9 @@ import {
   ImageProcessorService,
   IMAGE_VARIANT_NAMES,
 } from '@/infrastructure/image/image-processor.service';
-import { WorksRepository } from '@/modules/works/repositories/works.repository';
 import { PRIVATE_STORAGE, PUBLIC_STORAGE } from '@/common/constants';
-import { isUUID } from 'class-validator';
-import { WorkChaptersRepository } from '@/modules/works/repositories/work-chapters.repository';
 import { FilesRepository } from '../repositories/files.repository';
+import { getHtmlStats } from '../utils/html-stats';
 
 @Injectable()
 export class WorksFilesService {
@@ -19,14 +17,11 @@ export class WorksFilesService {
     @Inject(PRIVATE_STORAGE)
     private readonly privateStorageService: SupabaseStorageProvider,
     private readonly imageService: ImageProcessorService,
-    //🔥 todo: no es de este dominio
-    private readonly worksRepository: WorksRepository,
     private readonly filesRepository: FilesRepository,
-    private readonly worksChaptersRepository: WorkChaptersRepository,
   ) {}
 
   async uploadCover(id: string, userId: string, file?: any): Promise<void> {
-    const work = await this.worksRepository.findByIdAndUserId(id, userId);
+    const work = await this.filesRepository.findWorkByIdAndUserId(id, userId);
     if (!work) {
       throw new AppException('WORK_NOT_FOUND', { id, userId });
     }
@@ -43,21 +38,17 @@ export class WorksFilesService {
       });
     }
 
-    const aspectRatio = await this.imageService.getAspectRatio(file.buffer);
-    if (!this.imageService.isValidWorkCoverAspectRatio(aspectRatio)) {
-      throw new AppException('WORK_COVER_INVALID_ASPECT_RATIO', {
-        file,
-        id,
-        userId,
-        aspectRatio,
-      });
-    }
+    // const aspectRatio = await this.imageService.getAspectRatio(file.buffer);
+    // if (!this.imageService.isValidWorkCoverAspectRatio(aspectRatio)) {
+    //   throw new AppException('WORK_COVER_INVALID_ASPECT_RATIO', {
+    //     file,
+    //     id,
+    //     userId,
+    //     aspectRatio,
+    //   });
+    // }
 
     const variants = await this.imageService.generateCoverVariants(file.buffer);
-
-    // 🔥 TODO: SE ESTA DESPERDICIANDO COMPUTO, hay que guardar solo el path
-    // la url publica se forma a partir del bucket
-    // https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
 
     // upload covers to supabase
     await Promise.all(
@@ -71,31 +62,12 @@ export class WorksFilesService {
         );
       }),
     );
-
-    // get urls of cover from supabase
-    const urls = Object.fromEntries(
-      await Promise.all(
-        IMAGE_VARIANT_NAMES.map(async (name) => {
-          const path = `works/${work.id}/cover/${name}.webp`;
-          const url = await this.publicStorageService.getPublicUrl(path);
-          return [name, url] as const;
-        }),
-      ),
-    ) as Record<(typeof IMAGE_VARIANT_NAMES)[number], string>;
-
-    // upload cover urls into database
-    await this.filesRepository.updateCoverUrls(work.id, {
-      coverThumbUrl: urls.thumb,
-      coverSmallUrl: urls.small,
-      coverMediumUrl: urls.medium,
-      coverLargeUrl: urls.large,
-    });
   }
 
   async uploadContent(
     workId: string,
     userId: string,
-    info: string,
+    chapterId,
     file: any,
   ): Promise<void> {
     // validations
@@ -105,87 +77,96 @@ export class WorksFilesService {
         mimetype: file.mimetype,
       });
 
-    if (!info)
-      throw new AppException('WORK_CONTENT_INFO_FILE_MISSING', { info });
-
-    //🔥 TODO: esas validaciones estan medio chafas
-    let infoJson = {};
-    try {
-      infoJson = JSON.parse(info);
-    } catch (e) {
-      throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', { infoJson }, e);
-    }
-
-    if (!('workGenreId' in infoJson)) {
-      throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', {
-        infoJson,
-        more: 'Not workGenreId into infoJson',
-      });
-    }
-
-    const workGenreId = String(infoJson.workGenreId);
-    if (!isUUID(workGenreId, '4')) {
-      throw new AppException('WORK_GENRE_NOT_UUID', { workGenreId });
-    }
-
-    // data manipulation
-    const slug = await this.filesRepository.findGenreSlugById(workGenreId);
-    if (!slug) {
-      throw new AppException('WORK_GENRE_NOT_FOUND', { workGenreId });
-    }
-
-    const work = await this.worksRepository.findByIdAndUserId(workId, userId);
+    const work = await this.filesRepository.findWorkContentByIdAndUserId(
+      workId,
+      userId,
+      chapterId,
+    );
     if (!work) {
       throw new AppException('WORK_NOT_FOUND', { workId });
     }
 
-    // 🔥 Magic strings
-    switch (slug) {
+    const html = file.buffer.toString('utf8');
+    const { wordCount, characterCount } = getHtmlStats(html);
+
+    switch (work.genreSlug) {
+      //🔥 TODO: magic strings
       case 'poema':
-        // los poemas suben poem.html
+      case 'reseña':
+      case 'cuento':
         await this.privateStorageService.upload(
-          `works/${workId}/poem.html`,
+          `works/${workId}/manuscript.html`,
           file.buffer,
           'text/html',
         );
+        await this.filesRepository.updateWorkStats(
+          workId,
+          wordCount,
+          characterCount,
+        );
         break;
-
-      // los libros, novelas llevan capitulos
       case 'novela':
       case 'libro':
-        //🔥 TODO: esas validaciones estan medio chafas
-        if (!('workChapterId' in infoJson)) {
+        if (!chapterId || !work.chapterId) {
           throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', {
-            infoJson,
-            more: `Missing workChapterId for ${slug}`,
-          });
-        }
-        const workChapterId = String(infoJson.workChapterId);
-        if (!isUUID(workChapterId, '4')) {
-          throw new AppException('WORK_CHAPTER_NOT_UUID', { workChapterId });
-        }
-        const chapter = await this.worksChaptersRepository.findByIdAndWorkId(
-          workChapterId,
-          workId,
-        );
-        if (!chapter) {
-          throw new AppException('WORK_CHAPTER_DOES_NOT_EXIST', {
-            workChapterId,
-            workId,
+            chapterId,
+            more: `Missing or invalid chapterId for ${work.genreSlug}`,
           });
         }
         await this.privateStorageService.upload(
-          `works/${workId}/chapters/${workChapterId}.html`,
+          `works/${work.id}/chapters/${work.chapterId}.html`,
           file.buffer,
           'text/html',
         );
+        await this.filesRepository.updateChapterStats(
+          chapterId,
+          wordCount,
+          characterCount,
+        );
         break;
-
-      // OTROS TIPOS NO SE HAN CONFIGURADO AUN
       default:
         throw new AppException('WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET', {
-          slug,
+          genreSlug: work.genreSlug,
         });
     }
+  }
+
+  async getManuscript(workId: string, userId: string, chapterId) {
+    const work = await this.filesRepository.findWorkContentByIdAndUserId(
+      workId,
+      userId,
+      chapterId,
+    );
+    if (!work) {
+      throw new AppException('WORK_NOT_FOUND', { workId });
+    }
+    let manuscript = '';
+    switch (work.genreSlug) {
+      case 'poema':
+      case 'reseña':
+      case 'cuento':
+        manuscript = await this.privateStorageService.downloadText(
+          `works/${workId}/manuscript.html`,
+        );
+        break;
+      case 'novela':
+      case 'libro':
+        if (!chapterId || !work.chapterId) {
+          throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', {
+            chapterId,
+            more: `Missing or invalid chapterId for ${work.genreSlug}`,
+          });
+        }
+        manuscript = await this.privateStorageService.downloadText(
+          `works/${work.id}/chapters/${work.chapterId}.html`,
+        );
+        break;
+      default:
+        throw new AppException('WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET', {
+          genreSlug: work.genreSlug,
+        });
+    }
+
+    return manuscript;
   }
 }

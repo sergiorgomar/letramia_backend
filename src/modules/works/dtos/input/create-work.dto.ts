@@ -1,15 +1,15 @@
-import { IsString, IsOptional, IsUUID, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MaxLength } from 'class-validator';
 
 export class CreateWorkDto {
   @IsString()
   @MaxLength(255)
   title: string;
 
-  @IsUUID()
-  workThemeId: string;
+  @IsString()
+  workThemeSlug: string;
 
-  @IsUUID()
-  workGenreId: string;
+  @IsString()
+  workGenreSlug: string;
 
   @IsString()
   @IsOptional()

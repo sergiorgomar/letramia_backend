@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
-export class CreateWorkChapterDto {
+export class UpdateWorkChapterTitleDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)

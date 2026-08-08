@@ -78,7 +78,7 @@ export const WORKS_ERROR_CATALOG = {
     internalMessage: '',
   },
   WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET: {
-    code: 'WORK-0012',
+    code: 'WORK-0015',
     status: 500,
     message: 'Lo sentimos, esta funcion no esta disponible',
     internalMessage: '',
@@ -94,5 +94,59 @@ export const WORKS_ERROR_CATALOG = {
     status: 400,
     message: 'El capitulo no existe.',
     internalMessage: '',
+  },
+  WORKS_REPOSITORY_FIND_ALL_BY_USER_ID_ERROR: {
+    code: 'WORK-0016',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.findAllByUserId',
+  },
+  WORKS_REPOSITORY_FIND_BY_ID_AND_USER_ID_ERROR: {
+    code: 'WORK-0017',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.findByIdAndUserId',
+  },
+  WORKS_REPOSITORY_CREATE_ERROR: {
+    code: 'WORK-0018',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.create',
+  },
+  WORKS_REPOSITORY_UPDATE_ERROR: {
+    code: 'WORK-0019',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.update',
+  },
+  WORKS_REPOSITORY_EXIST_WORK_BY_ID_FOR_USER_ID_ERROR: {
+    code: 'WORK-0020',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.existWorkByIdForUserId',
+  },
+  WORKS_REPOSITORY_EXIST_THEME_BY_SLUG_ERROR: {
+    code: 'WORK-0021',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.existThemeBySlug',
+  },
+  WORKS_REPOSITORY_EXIST_GENRE_BY_SLUG_ERROR: {
+    code: 'WORK-0022',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.existGenreBySlug',
+  },
+  WORKS_REPOSITORY_FIND_THEME_AND_GENRE_IDS_BY_SLUG_ERROR: {
+    code: 'WORK-0023',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.findThemeAndGenreIdsBySlug',
+  },
+  WORKS_REPOSITORY_FIND_SLUGS_STARTING_WITH_ERROR: {
+    code: 'WORK-0024',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.findSlugsStartingWith',
   },
 } as const;

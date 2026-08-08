@@ -1,6 +1,6 @@
 import { ArrayNotEmpty, IsArray, IsUUID } from 'class-validator';
 
-export class ReorderWorkChaptersDto {
+export class ChangeWorkChaptersOrderDto {
   @IsArray()
   @ArrayNotEmpty()
   @IsUUID(undefined, { each: true })

@@ -1,3 +1,5 @@
+import { Cache } from 'cache-manager';
+import type { Request } from 'express';
 import {
   CanActivate,
   ExecutionContext,
@@ -5,15 +7,15 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { Request } from 'express';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { RequestUser } from '../types/request-user.types';
 import { SUPABASE_ANON_PROVIDER } from '@/common/constants';
 import { AppException } from '@/common/exceptions/app.exception';
 import { UsersRepository } from '@/modules/accounts/repositories/users.repository';
 
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { RequestUser } from '../types/request-user.types';
 /**
  * Guard global de autenticación con el access token de Supabase.
  *
@@ -35,6 +37,8 @@ export class SupabaseAuthGuard implements CanActivate {
     @Inject(SUPABASE_ANON_PROVIDER)
     private readonly supabaseAnon: SupabaseClient,
     private readonly usersRepository: UsersRepository,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -48,37 +52,62 @@ export class SupabaseAuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { user?: RequestUser }>();
 
-    const authHeader = request.headers.authorization;
-    const accessToken = authHeader?.startsWith('Bearer ')
-      ? authHeader.slice(7)
-      : undefined;
+    const accessToken = request.cookies.access_token;
 
     if (!accessToken) {
       throw new AppException('INVALID_TOKEN', { reason: 'missing_header' });
     }
 
-    const { data, error } = await this.supabaseAnon.auth.getUser(accessToken);
-    if (error || !data.user?.email) {
+    const { data, error } = await this.supabaseAnon.auth.getClaims(accessToken);
+    const claims = data?.claims;
+    if (error || !claims?.sub || typeof claims.email !== 'string') {
       throw new AppException('INVALID_TOKEN', {}, error);
     }
 
-    const user = await this.usersRepository.findByEmail(data.user.email);
+    const cacheKey = `user:${claims.sub}`;
+
+    let user = await this.cacheManager.get<RequestUser>(cacheKey);
+
     if (!user) {
-      throw new AppException('ACCOUNT_NOT_FOUND', { email: data.user.email });
+      const dbUser = await this.usersRepository.findByEmail(claims.email);
+
+      if (!dbUser) {
+        throw new AppException('ACCOUNT_NOT_FOUND', { email: claims.email });
+      }
+
+      if (!dbUser.active) {
+        throw new AppException('ACCOUNT_DISABLED', { userId: dbUser.id });
+      }
+
+      user = {
+        //id: '02eb4bbe-2b0e-404e-a953-eaecdcda888e',
+        id: dbUser.id,
+        email: claims.email,
+        name: dbUser.name,
+        active: dbUser.active,
+      };
+
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const remainingMs = Math.max(0, (Number(claims.exp) - nowSeconds) * 1000);
+
+      //🔥 TODO: revalidate: Al desactivar un usuario o cambiar userTypes,
+      // invalida user:${supabaseUserId} inmediatamente.
+      await this.cacheManager.set(
+        cacheKey,
+        user,
+        Math.min(remainingMs, 60 * 60 * 1000),
+      );
+    } else {
+      console.log('cached user');
     }
 
-    if (!user.active) {
-      throw new AppException('ACCOUNT_DISABLED', { userId: user.id });
-    }
-
-    request.user = {
+    const requestUser: RequestUser = {
       id: user.id,
       email: user.email,
       name: user.name,
-      userTypes: user.userTypes,
       active: user.active,
     };
-
+    request.user = requestUser;
     return true;
   }
 }

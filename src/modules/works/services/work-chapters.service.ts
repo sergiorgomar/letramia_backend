@@ -1,200 +1,39 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AppException } from '@/common/exceptions/app.exception';
-import { PRIVATE_STORAGE } from '@/common/constants';
-import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-storage.provider';
-import {
-  WorkChapterEntity,
-  WorkChaptersRepository,
-} from '../repositories/work-chapters.repository';
-import { WorksRepository } from '../repositories/works.repository';
-import { CreateWorkChapter } from '../types/create-work-chapter.type';
-import { UpdateWorkChapter } from '../types/update-work-chapter.type';
-import { ReorderWorkChapters } from '../types/reorder-work-chapters.type';
-import { WorkChapterResult } from '../types/work-chapter-result.type';
-import { WorkChapterContentResult } from '../types/work-chapter-content-result.type';
+import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
 import { slugify } from '../utils/slugify';
 
 @Injectable()
 export class WorkChaptersService {
   constructor(
     private readonly workChaptersRepository: WorkChaptersRepository,
-    private readonly worksRepository: WorksRepository,
-    @Inject(PRIVATE_STORAGE)
-    private readonly supabaseStorageProvider: SupabaseStorageProvider,
   ) {}
 
-  async findAll(workId: string, userId: string): Promise<WorkChapterResult[]> {
-    await this.assertWorkOwned(workId, userId, true);
-    const chapters = await this.workChaptersRepository.findAllByWorkId(workId);
-    return chapters.map(toChapterResult);
-  }
-
-  async findOne(
-    workId: string,
-    chapterId: string,
-    userId: string,
-  ): Promise<WorkChapterContentResult> {
-    await this.assertWorkOwned(workId, userId, true);
-    const chapter = await this.getOwnedChapter(workId, chapterId);
-
-    const content = await this.supabaseStorageProvider.downloadText(
-      chapterHtmlPath(workId, chapterId),
+  async create(workId: string, userId: string, title: string) {
+    //🔥 TODO: La validación de propiedad se repite en los flujos de capítulos; no extraerla a un método sin aprobación.
+    const work = await this.workChaptersRepository.findWorkByIdAndUserId(
+      workId,
+      userId,
     );
 
-    return { ...toChapterResult(chapter), content };
-  }
+    if (!work) {
+      throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId });
+    }
 
-  async create(dto: CreateWorkChapter): Promise<WorkChapterResult> {
-    await this.assertWorkOwned(dto.workId, dto.userId);
-
-    const slug = await this.resolveAvailableSlug(dto.workId, dto.title);
-    const maxSequence = await this.workChaptersRepository.findMaxSequence(
-      dto.workId,
-    );
-
-    const chapter = await this.workChaptersRepository.create({
-      workId: dto.workId,
-      title: dto.title,
-      slug,
-      sequence: maxSequence + 1,
-    });
-
-    return toChapterResult(chapter);
-  }
-
-  async update(
-    workId: string,
-    chapterId: string,
-    userId: string,
-    dto: UpdateWorkChapter,
-  ): Promise<WorkChapterResult> {
-    await this.assertWorkOwned(workId, userId, true);
-    const chapter = await this.getOwnedChapter(workId, chapterId);
-
-    // Solo se revalida el slug si el título realmente cambió, para no
-    // chocar contra sí mismo en cada guardado.
-    const slug =
-      dto.title === chapter.title
-        ? chapter.slug
-        : await this.resolveAvailableSlug(workId, dto.title, chapterId);
-
-    const updated = await this.workChaptersRepository.update(chapterId, {
-      title: dto.title,
-      slug,
-    });
-
-    return toChapterResult(updated);
-  }
-
-  // Recibe el orden completo del libro y reasigna las secuencias 1..n. Se pide
-  // la lista entera (y no "mové el capítulo X a la posición Y") para que el
-  // resultado sea el mismo sin importar cuántos movimientos hizo el usuario.
-  async reorder(
-    workId: string,
-    userId: string,
-    dto: ReorderWorkChapters,
-  ): Promise<WorkChapterResult[]> {
-    await this.assertWorkOwned(workId, userId, true);
-
-    const chapters = await this.workChaptersRepository.findAllByWorkId(workId);
-    const currentIds = new Set(chapters.map((chapter) => chapter.id));
-    const receivedIds = new Set(dto.chapterIds);
-
-    // Debe ser exactamente el mismo conjunto: ni de más, ni de menos, ni
-    // repetidos. Si no, alguien mandó una lista desincronizada.
-    const isSameSet =
-      dto.chapterIds.length === chapters.length &&
-      receivedIds.size === dto.chapterIds.length &&
-      dto.chapterIds.every((id) => currentIds.has(id));
-
-    if (!isSameSet) {
-      throw new AppException('CHAPTER_REORDER_MISMATCH', {
+    if (!work.supportsChapters) {
+      throw new AppException('CHAPTERS_NOT_SUPPORTED_FOR_WORK_GENRE', {
         workId,
-        expected: chapters.length,
-        received: dto.chapterIds.length,
+        workGenreId: work.workGenreId,
       });
     }
 
-    await this.workChaptersRepository.updateSequences(
-      dto.chapterIds.map((id, index) => ({ id, sequence: index + 1 })),
-    );
+    // validar que el work tenga un genero que acepte chapters, solo novelas y libros aceptan, pero la clave la tiene el genre id en supportsChapters
 
-    const reordered = await this.workChaptersRepository.findAllByWorkId(workId);
-    return reordered.map(toChapterResult);
-  }
-
-  async delete(
-    workId: string,
-    chapterId: string,
-    userId: string,
-  ): Promise<void> {
-    await this.assertWorkOwned(workId, userId, true);
-    await this.getOwnedChapter(workId, chapterId);
-
-    // La fila es la fuente de verdad, así que va primero. El HTML se borra
-    // best-effort: un capítulo recién creado puede no tener archivo todavía,
-    // y un blob huérfano es mucho menos grave que un capítulo que no se deja
-    // eliminar.
-    await this.workChaptersRepository.deleteById(chapterId);
-
-    try {
-      await this.supabaseStorageProvider.remove(
-        chapterHtmlPath(workId, chapterId),
-      );
-    } catch {
-      // Silenciado a propósito: el capítulo ya se eliminó para el usuario.
-    }
-  }
-
-  // Verifica que el libro exista y pertenezca al usuario. Cualquier operación
-  // sobre capítulos pasa antes por acá.
-  private async assertWorkOwned(
-    workId: string,
-    userId: string,
-    allowLegacyChapters = false,
-  ): Promise<void> {
-    const work = await this.worksRepository.findByIdAndUserId(workId, userId);
-    if (!work) {
-      throw new AppException('WORK_NOT_FOUND', { id: workId, userId });
-    }
-    /*const genre = await this.workGenresRepository.findById(work.workGenreId);
-    const hasLegacyChapters =
-      allowLegacyChapters &&
-      (await this.workChaptersRepository.findAllByWorkId(workId)).length > 0;
-    if (genre?.name === 'Poema' && !hasLegacyChapters) {
-      throw new AppException('WORK_NOT_FOUND', { id: workId, userId });
-    }*/
-  }
-
-  private async getOwnedChapter(
-    workId: string,
-    chapterId: string,
-  ): Promise<WorkChapterEntity> {
-    const chapter = await this.workChaptersRepository.findByIdAndWorkId(
-      chapterId,
-      workId,
-    );
-    if (!chapter) {
-      throw new AppException('CHAPTER_NOT_FOUND', { chapterId, workId });
-    }
-    return chapter;
-  }
-
-  // A diferencia de las obras, acá NO se agrega sufijo numérico: si el título
-  // ya existe en el libro se rechaza y el usuario elige otro.
-  private async resolveAvailableSlug(
-    workId: string,
-    title: string,
-    excludeId?: string,
-  ): Promise<string> {
     const slug = slugify(title);
-    const taken = await this.workChaptersRepository.existsBySlug(
-      workId,
-      slug,
-      excludeId,
-    );
+    const chapterWithSameSlug =
+      await this.workChaptersRepository.findBySlugAndWorkId(slug, workId);
 
-    if (taken) {
+    if (chapterWithSameSlug) {
       throw new AppException('CHAPTER_TITLE_ALREADY_EXISTS', {
         workId,
         title,
@@ -202,22 +41,89 @@ export class WorkChaptersService {
       });
     }
 
-    return slug;
+    const lastChapter =
+      await this.workChaptersRepository.findLastSequenceByWorkId(workId);
+
+    const { id } = await this.workChaptersRepository.create(
+      workId,
+      title,
+      slug,
+      (lastChapter?.sequence ?? 0) + 1,
+    );
+
+    return { id };
   }
-}
 
-function toChapterResult(chapter: WorkChapterEntity): WorkChapterResult {
-  return {
-    id: chapter.id,
-    workId: chapter.workId,
-    title: chapter.title,
-    slug: chapter.slug,
-    sequence: chapter.sequence,
-    createdAt: chapter.createdAt,
-    updatedAt: chapter.updatedAt,
-  };
-}
+  async changeOrder(workId: string, userId: string, chapterIds: string[]) {
+    //🔥 TODO: si ya está publicada la obra lo mandamos a la chingada
+    //🔥 TODO: La validación de propiedad se repite en los flujos de capítulos; no extraerla a un método sin aprobación.
+    const work = await this.workChaptersRepository.findWorkByIdAndUserId(
+      workId,
+      userId,
+    );
 
-function chapterHtmlPath(workId: string, chapterId: string): string {
-  return `works/${workId}/chapters/${chapterId}.html`;
+    if (!work) {
+      throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId, userId });
+    }
+
+    const chapters =
+      await this.workChaptersRepository.findAllIdsByWorkId(workId);
+    const currentChapterIds = new Set(chapters.map((chapter) => chapter.id));
+    const requestedChapterIds = new Set(chapterIds);
+    const isExactOrder =
+      chapterIds.length === chapters.length &&
+      requestedChapterIds.size === chapterIds.length &&
+      chapterIds.every((chapterId) => currentChapterIds.has(chapterId));
+
+    if (!isExactOrder) {
+      throw new AppException('CHAPTER_REORDER_MISMATCH', {
+        workId,
+        expected: chapters.length,
+        received: chapterIds.length,
+      });
+    }
+
+    await this.workChaptersRepository.updateOrder(chapterIds);
+  }
+
+  async updateTitle(
+    workId: string,
+    chapterId: string,
+    userId: string,
+    title: string,
+  ) {
+    //🔥 TODO: La validación de propiedad se repite en los flujos de capítulos; no extraerla a un método sin aprobación.
+    const work = await this.workChaptersRepository.findWorkByIdAndUserId(
+      workId,
+      userId,
+    );
+
+    if (!work) {
+      throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId, userId });
+    }
+
+    const chapter = await this.workChaptersRepository.findByIdAndWorkId(
+      chapterId,
+      workId,
+    );
+
+    if (!chapter) {
+      throw new AppException('CHAPTER_NOT_FOUND', { workId, chapterId });
+    }
+
+    const slug = slugify(title);
+    const chapterWithSameSlug =
+      await this.workChaptersRepository.findBySlugAndWorkId(slug, workId);
+
+    if (chapterWithSameSlug && chapterWithSameSlug.id !== chapterId) {
+      throw new AppException('CHAPTER_TITLE_ALREADY_EXISTS', {
+        workId,
+        chapterId,
+        title,
+        slug,
+      });
+    }
+
+    return this.workChaptersRepository.updateTitle(chapterId, title, slug);
+  }
 }

@@ -16,6 +16,7 @@ import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
 import { CurrentUser } from '@/infrastructure/auth/decorators/current-user.decorator';
 import { UpdateWorkDto } from '../dtos/input/update-work.dto';
 import { UpdateWorkResponseDto } from '../dtos/output/update-work-response.dto';
+import { WorkResponseByIdDto } from '../dtos/output/work-response-by-id';
 
 @Controller('works')
 export class WorksController {
@@ -31,11 +32,11 @@ export class WorksController {
   // Obtener el detalle de 1 libro dado 1 ID.
   @Get(':id')
   //🔥 No reciclar dtos
-  @ResponseDto(WorkResponseDto, 'Obra literaria obtenida con éxito')
+  @ResponseDto(WorkResponseByIdDto, 'Obra literaria obtenida con éxito')
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: RequestUser,
-  ): Promise<WorkResponseDto> {
+  ): Promise<WorkResponseByIdDto> {
     return this.worksService.findOne(id, user.id);
   }
 
@@ -69,4 +70,5 @@ export class WorksController {
   }
 
   //🔥 TODO: Eliminar una obra
+  //🔥 TODO: Verificar si el slug de una obra se repite
 }

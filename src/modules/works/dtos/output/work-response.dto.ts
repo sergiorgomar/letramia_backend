@@ -11,7 +11,8 @@ export class WorkResponseDto {
   @IsEnum(WorkStatus)
   status: WorkStatus;
 
-  @IsUrl()
+  //🔥 JUST FOR DEVELOP
+  @IsUrl({ require_tld: false })
   @IsOptional()
   coverUrl: string | null;
 }

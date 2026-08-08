@@ -1,12 +1,6 @@
-import {
-  IsDate,
-  IsInt,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsDate, IsInt, IsString, IsUUID } from 'class-validator';
 
-export class WorkChapterDetailResponseDto {
+export class GetWorkChapterResponseDto {
   @IsUUID()
   id: string;
 
@@ -21,10 +15,6 @@ export class WorkChapterDetailResponseDto {
 
   @IsInt()
   sequence: number;
-
-  @IsString()
-  @IsOptional()
-  content: string | null;
 
   @IsDate()
   createdAt: Date;

@@ -1,6 +1,6 @@
 {
-  "id": "9b4a4cbb-c721-4d14-a29e-d710d2a3e1e2",
-  "prevId": "630c44b1-869a-4251-bd81-ac3643df8850",
+  "id": "92bfdcb0-2702-42aa-b41a-82d276413723",
+  "prevId": "468ef4d1-fe65-465a-950b-3c422443e048",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -93,8 +93,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.work_categories": {
-      "name": "work_categories",
+    "public.work_chapters": {
+      "name": "work_chapters",
       "schema": "",
       "columns": {
         "id": {
@@ -104,9 +104,27 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "name": {
-          "name": "name",
-          "type": "varchar(100)",
+        "work_id": {
+          "name": "work_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(280)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -126,15 +144,29 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "work_chapters_work_id_works_id_fk": {
+          "name": "work_chapters_work_id_works_id_fk",
+          "tableFrom": "work_chapters",
+          "tableTo": "works",
+          "columnsFrom": [
+            "work_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.work_types": {
-      "name": "work_types",
+    "public.work_genres": {
+      "name": "work_genres",
       "schema": "",
       "columns": {
         "id": {
@@ -146,6 +178,80 @@
         },
         "name": {
           "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requires_synopsis": {
+          "name": "requires_synopsis",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "supports_chapters": {
+          "name": "supports_chapters",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "work_genres_slug_unique": {
+          "name": "work_genres_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.work_themes": {
+      "name": "work_themes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
@@ -168,7 +274,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "work_themes_slug_unique": {
+          "name": "work_themes_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -190,14 +304,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "work_category_id": {
-          "name": "work_category_id",
+        "work_theme_id": {
+          "name": "work_theme_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "work_type_id": {
-          "name": "work_type_id",
+        "work_genre_id": {
+          "name": "work_genre_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -220,11 +334,27 @@
           "primaryKey": false,
           "notNull": false
         },
-        "cover_url": {
-          "name": "cover_url",
-          "type": "varchar(500)",
+        "word_count": {
+          "name": "word_count",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": 0
+        },
+        "character_count": {
+          "name": "character_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "status": {
+          "name": "status",
+          "type": "work_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
         },
         "created_at": {
           "name": "created_at",
@@ -256,12 +386,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "works_work_category_id_work_categories_id_fk": {
-          "name": "works_work_category_id_work_categories_id_fk",
+        "works_work_theme_id_work_themes_id_fk": {
+          "name": "works_work_theme_id_work_themes_id_fk",
           "tableFrom": "works",
-          "tableTo": "work_categories",
+          "tableTo": "work_themes",
           "columnsFrom": [
-            "work_category_id"
+            "work_theme_id"
           ],
           "columnsTo": [
             "id"
@@ -269,12 +399,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "works_work_type_id_work_types_id_fk": {
-          "name": "works_work_type_id_work_types_id_fk",
+        "works_work_genre_id_work_genres_id_fk": {
+          "name": "works_work_genre_id_work_genres_id_fk",
           "tableFrom": "works",
-          "tableTo": "work_types",
+          "tableTo": "work_genres",
           "columnsFrom": [
-            "work_type_id"
+            "work_genre_id"
           ],
           "columnsTo": [
             "id"
@@ -313,6 +443,14 @@
       "values": [
         "escritor",
         "lector"
+      ]
+    },
+    "public.work_status": {
+      "name": "work_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "published"
       ]
     }
   },

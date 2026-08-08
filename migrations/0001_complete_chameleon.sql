@@ -1,0 +1,1 @@
+ALTER TABLE "work_genres" ADD COLUMN "supports_chapters" boolean DEFAULT false NOT NULL;

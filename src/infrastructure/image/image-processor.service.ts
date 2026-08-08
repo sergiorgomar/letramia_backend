@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import sharp from 'sharp';
 
-export type ImageVariantName = 'thumb' | 'small' | 'medium' | 'large';
+export type ImageVariantName =
+  'mini_thumb' | 'thumb' | 'small' | 'medium' | 'large';
 
 interface VariantConfig {
   width: number;
@@ -11,6 +12,7 @@ interface VariantConfig {
 // Todas las variantes se generan como WebP. Sharp descarta metadata
 // (EXIF, GPS, ICC, etc.) por defecto salvo que se llame a withMetadata().
 const VARIANTS: Record<ImageVariantName, VariantConfig> = {
+  mini_thumb: { width: 80, quality: 60 },
   thumb: { width: 150, quality: 60 },
   small: { width: 400, quality: 70 },
   medium: { width: 800, quality: 78 },

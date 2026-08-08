@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import {
   Controller,
   Post,
@@ -5,6 +6,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
 import { ResponseDto } from '@/common/decorators/response-dto.decorator';
 import { Public } from '@/infrastructure/auth/decorators/public.decorator';
@@ -35,8 +37,27 @@ export class AccountsController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ResponseDto(LoginResponseDto, 'Sesión iniciada con éxito')
-  login(@Body() dto: LoginAccountDto): Promise<LoginResponseDto> {
-    return this.accountsService.login(dto);
+  async login(
+    @Body() dto: LoginAccountDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<LoginResponseDto> {
+    const result = await this.accountsService.login(dto);
+    response.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: false, //process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 1000, // ajusta al tiempo real del access token
+    });
+
+    response.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: false, //process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+    return result;
   }
 
   @Public()
