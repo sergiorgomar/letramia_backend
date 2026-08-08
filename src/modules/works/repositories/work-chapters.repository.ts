@@ -125,4 +125,31 @@ export class WorkChaptersRepository {
       }
     });
   }
+
+  @HandleErrors('WORK_CHAPTERS_REPOSITORY_DELETE_AND_REORDER_ERROR')
+  async deleteAndReorder(chapterId: string, workId: string): Promise<void> {
+    await this.db.transaction(async (transaction) => {
+      await transaction
+        .delete(workChapterEntity)
+        .where(
+          and(
+            eq(workChapterEntity.id, chapterId),
+            eq(workChapterEntity.workId, workId),
+          ),
+        );
+
+      const chapters = await transaction
+        .select({ id: workChapterEntity.id })
+        .from(workChapterEntity)
+        .where(eq(workChapterEntity.workId, workId))
+        .orderBy(asc(workChapterEntity.sequence));
+
+      for (const [index, chapter] of chapters.entries()) {
+        await transaction
+          .update(workChapterEntity)
+          .set({ sequence: index + 1, updatedAt: new Date() })
+          .where(eq(workChapterEntity.id, chapter.id));
+      }
+    });
+  }
 }

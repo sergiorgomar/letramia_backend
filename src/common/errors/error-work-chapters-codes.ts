@@ -47,6 +47,12 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Falló WorkChaptersRepository.updateTitle',
   },
+  WORK_CHAPTERS_REPOSITORY_DELETE_AND_REORDER_ERROR: {
+    code: 'CHAP-0014',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorkChaptersRepository.deleteAndReorder',
+  },
   CHAPTER_WORK_NOT_FOUND: {
     code: 'CHAP-0004',
     status: 404,
@@ -81,5 +87,12 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     message: 'El género de esta obra no admite capítulos.',
     internalMessage:
       'Se intentó crear un capítulo para una obra con supportsChapters = false',
+  },
+  CHAPTER_HTML_DELETE_ERROR: {
+    code: 'CHAP-0015',
+    status: 500,
+    message: 'No se pudo eliminar el contenido del capítulo.',
+    internalMessage:
+      'Falló la eliminación del HTML del capítulo en el almacenamiento privado',
   },
 } as const;

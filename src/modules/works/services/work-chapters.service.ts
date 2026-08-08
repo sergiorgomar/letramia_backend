@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { PRIVATE_STORAGE } from '@/common/constants';
 import { AppException } from '@/common/exceptions/app.exception';
+import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-storage.provider';
 import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
 import { slugify } from '../utils/slugify';
 
@@ -7,6 +9,8 @@ import { slugify } from '../utils/slugify';
 export class WorkChaptersService {
   constructor(
     private readonly workChaptersRepository: WorkChaptersRepository,
+    @Inject(PRIVATE_STORAGE)
+    private readonly privateStorageService: SupabaseStorageProvider,
   ) {}
 
   async create(workId: string, userId: string, title: string) {
@@ -125,5 +129,42 @@ export class WorkChaptersService {
     }
 
     return this.workChaptersRepository.updateTitle(chapterId, title, slug);
+  }
+
+  async delete(workId: string, chapterId: string, userId: string) {
+    //🔥 TODO: La validación de propiedad se repite en los flujos de capítulos; no extraerla a un método sin aprobación.
+    const work = await this.workChaptersRepository.findWorkByIdAndUserId(
+      workId,
+      userId,
+    );
+
+    if (!work) {
+      throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId, userId });
+    }
+
+    const chapter = await this.workChaptersRepository.findByIdAndWorkId(
+      chapterId,
+      workId,
+    );
+
+    if (!chapter) {
+      throw new AppException('CHAPTER_NOT_FOUND', { workId, chapterId });
+    }
+
+    const path = `works/${workId}/chapters/${chapterId}.html`;
+
+    try {
+      await this.privateStorageService.remove(path);
+    } catch (error) {
+      throw new AppException(
+        'CHAPTER_HTML_DELETE_ERROR',
+        { workId, chapterId, path },
+        error,
+      );
+    }
+
+    await this.workChaptersRepository.deleteAndReorder(chapterId, workId);
+
+    return { id: chapterId };
   }
 }

@@ -1,6 +1,7 @@
 import {
   Controller,
   // Get,
+  Delete,
   Post,
   Patch,
   Body,
@@ -19,6 +20,7 @@ import { CreateWorkChapterResponseDto } from '../dtos/output/create-work-chapter
 // import { GetWorkChaptersResponseDto } from '../dtos/output/get-work-chapters-response.dto';
 import { ChangeWorkChaptersOrderResponseDto } from '../dtos/output/change-work-chapters-order-response.dto';
 import { UpdateWorkChapterTitleResponseDto } from '../dtos/output/update-work-chapter-title-response.dto';
+import { DeleteWorkChapterResponseDto } from '../dtos/output/delete-work-chapter-response.dto';
 
 @Controller('works/:workId/chapters')
 export class WorkChaptersController {
@@ -65,5 +67,18 @@ export class WorkChaptersController {
       user.id,
       dto.title,
     );
+  }
+
+  @Delete(':chapterId')
+  @ResponseDto(
+    DeleteWorkChapterResponseDto,
+    'Capítulo eliminado definitivamente con éxito',
+  )
+  delete(
+    @Param('workId', ParseUUIDPipe) workId: string,
+    @Param('chapterId', ParseUUIDPipe) chapterId: string,
+    @CurrentUser() user: RequestUser,
+  ): Promise<DeleteWorkChapterResponseDto> {
+    return this.workChaptersService.delete(workId, chapterId, user.id);
   }
 }
