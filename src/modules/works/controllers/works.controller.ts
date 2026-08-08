@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
   Body,
   Param,
   ParseUUIDPipe,
@@ -14,8 +13,6 @@ import { WorkResponseDto } from '../dtos/output/work-response.dto';
 import { CreateWorkResponseDto } from '../dtos/output/create-work-response.dto';
 import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
 import { CurrentUser } from '@/infrastructure/auth/decorators/current-user.decorator';
-import { UpdateWorkDto } from '../dtos/input/update-work.dto';
-import { UpdateWorkResponseDto } from '../dtos/output/update-work-response.dto';
 import { WorkResponseByIdDto } from '../dtos/output/work-response-by-id';
 
 @Controller('works')
@@ -31,7 +28,6 @@ export class WorksController {
 
   // Obtener el detalle de 1 libro dado 1 ID.
   @Get(':id')
-  //🔥 No reciclar dtos
   @ResponseDto(WorkResponseByIdDto, 'Obra literaria obtenida con éxito')
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
@@ -50,25 +46,7 @@ export class WorksController {
     return this.worksService.create({ ...dto, userId: user.id });
   }
 
-  // Actualizar los datos de una obra (no incluye cover)
-  @Patch(':id')
-  @ResponseDto(UpdateWorkResponseDto, 'Obra literaria actualizada con éxito')
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateWorkDto,
-    @CurrentUser() user: RequestUser,
-  ) {
-    return this.worksService.update(
-      {
-        id,
-        workThemeId: dto.workThemeId,
-        title: dto.title,
-        synopsis: dto.synopsis,
-      },
-      user.id,
-    );
-  }
-
+  //🔥 Actualizar los datos de una obra (no incluye cover)
   //🔥 TODO: Eliminar una obra
   //🔥 TODO: Verificar si el slug de una obra se repite
 }

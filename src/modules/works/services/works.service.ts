@@ -10,7 +10,6 @@ import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-stor
 import { WorksRepository } from '../repositories/works.repository';
 import { CreateWork } from '../types/create-work.type';
 import { CreateWorkResult } from '../types/create-work-result.type';
-import { UpdateWork } from '../types/update-work.type';
 import { slugify } from '../utils/slugify';
 import { getNextSlug } from '../utils/get-next-slug';
 
@@ -100,42 +99,6 @@ export class WorksService {
       slug,
       workThemeId: ids.themeId,
       workGenreId: ids.genreId,
-    });
-  }
-
-  async update(dto: UpdateWork, userId: string) {
-    const [workExist, themeExists] = [false, false];
-    /*await Promise.all([
-      this.worksRepository.existWorkByIdForUserId(dto.id, userId),
-      dto.workThemeId !== undefined
-        ? this.worksRepository.existThemeById(dto.workThemeId)
-        : Promise.resolve(true),
-    ]);*/
-    if (!workExist)
-      throw new AppException('WORK_NOT_FOUND', { workId: dto.id, userId });
-
-    if (!themeExists) {
-      throw new AppException('WORK_THEME_NOT_FOUND', {
-        workThemeId: dto.workThemeId,
-      });
-    }
-
-    // TODO: 🔥 Solo se regenera el slug si el título realmente cambió: si no, cada
-    // TODO: 🐛 AQUI HAY UN BUGZASO, SI MANDO EL MISMO TITULO SE QUIEBRAN LOS SLUGS!!
-    let slug: string | undefined;
-    if (dto.title !== undefined) {
-      slug = slugify(dto.title);
-      const existingSlugs = await this.worksRepository.findSlugsStartingWith(
-        slug,
-        dto.id,
-      );
-      if (existingSlugs.length > 0) slug = getNextSlug(slug, existingSlugs);
-    }
-
-    return await this.worksRepository.update(dto.id, {
-      ...dto,
-      synopsis: dto.synopsis,
-      slug,
     });
   }
 }

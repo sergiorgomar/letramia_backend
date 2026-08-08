@@ -32,7 +32,7 @@ export class WebRepository {
         id: workEntity.id,
         workSlug: workEntity.slug,
         title: workEntity.title,
-        publishedAt: workEntity.createdAt, //🔥 TODO: works needs published at date
+        publishedAt: workEntity.updatedAt, //🔥 TODO: works needs published at date
         synopsis: workEntity.synopsis,
         authorName: userEntity.name,
         themeName: workThemeEntity.name,

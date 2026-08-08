@@ -55,7 +55,6 @@ export class WorksRepository {
     }));
   }
 
-  //🔥 todo, np entiendo esta consulta
   @HandleErrors('WORKS_REPOSITORY_FIND_BY_ID_AND_USER_ID_ERROR')
   async findByIdAndUserId(id: string, userId: string) {
     const rows = await this.db
@@ -130,27 +129,6 @@ export class WorksRepository {
       .values(data)
       .returning({ id: workEntity.id });
     return row;
-  }
-
-  @HandleErrors('WORKS_REPOSITORY_UPDATE_ERROR')
-  async update(id: string, data: UpdateWorkEntity) {
-    const [row] = await this.db
-      .update(workEntity)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(workEntity.id, id))
-      .returning({ id: workEntity.id });
-    return row;
-  }
-
-  @HandleErrors('WORKS_REPOSITORY_EXIST_WORK_BY_ID_FOR_USER_ID_ERROR')
-  //🔥 TODO: estos cambian poco, deberiamos cachear
-  async existWorkByIdForUserId(workId: string, userId: string) {
-    const [row] = await this.db
-      .select({ id: workEntity.id })
-      .from(workEntity)
-      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
-      .limit(1);
-    return !!row;
   }
 
   @HandleErrors('WORKS_REPOSITORY_EXIST_THEME_BY_SLUG_ERROR')
