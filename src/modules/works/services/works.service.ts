@@ -12,6 +12,7 @@ import { CreateWork } from '../types/create-work.type';
 import { CreateWorkResult } from '../types/create-work-result.type';
 import { slugify } from '../utils/slugify';
 import { getNextSlug } from '../utils/get-next-slug';
+import { WorkStatus } from '../types/work-status.enum';
 
 // const PAGE_DATA_CACHE_TTL_MS = 60_000; // 1minuto
 
@@ -73,7 +74,6 @@ export class WorksService {
       await this.worksRepository.findSlugsStartingWith(slug);
     if (existingSlugs.length > 0) slug = getNextSlug(slug, existingSlugs);
 
-    // TODO: 🔥 FIX I do not like this
     const ids = await this.worksRepository.findThemeAndGenreIdsBySlug(
       dto.workThemeSlug,
       dto.workGenreSlug,
@@ -100,5 +100,52 @@ export class WorksService {
       workThemeId: ids.themeId,
       workGenreId: ids.genreId,
     });
+  }
+
+  async updateDetails(
+    workId: string,
+    userId: string,
+    title: string,
+    synopsis: string | undefined,
+    workThemeSlug: string,
+  ) {
+    const work = await this.worksRepository.findStatusByIdAndUserId(
+      workId,
+      userId,
+    );
+
+    if (!work) {
+      throw new AppException('WORK_NOT_FOUND', { workId, userId });
+    }
+
+    if (work.status === WorkStatus.PUBLISHED) {
+      throw new AppException('WORK_PUBLISHED_CANNOT_BE_UPDATED', {
+        workId,
+        userId,
+      });
+    }
+
+    const theme = await this.worksRepository.findThemeIdBySlug(workThemeSlug);
+
+    if (!theme) {
+      throw new AppException('WORK_THEME_NOT_FOUND', { workThemeSlug });
+    }
+
+    const slug = slugify(title);
+    const existingSlugs = await this.worksRepository.findSlugsStartingWith(
+      slug,
+      workId,
+    );
+    const nextSlug =
+      existingSlugs.length > 0 ? getNextSlug(slug, existingSlugs) : slug;
+
+    return this.worksRepository.updateDetailsByIdAndUserId(
+      workId,
+      userId,
+      title,
+      nextSlug,
+      synopsis,
+      theme.id,
+    );
   }
 }

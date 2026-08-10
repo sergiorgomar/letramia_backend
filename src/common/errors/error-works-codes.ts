@@ -149,4 +149,29 @@ export const WORKS_ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Falló WorksRepository.findSlugsStartingWith',
   },
+  WORK_PUBLISHED_CANNOT_BE_UPDATED: {
+    code: 'WORK-0025',
+    status: 409,
+    message: 'No puedes editar una obra publicada.',
+    internalMessage:
+      'Se intentó editar título, sinopsis o temática de una obra publicada',
+  },
+  WORKS_REPOSITORY_FIND_STATUS_BY_ID_AND_USER_ID_ERROR: {
+    code: 'WORK-0026',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.findStatusByIdAndUserId',
+  },
+  WORKS_REPOSITORY_FIND_THEME_ID_BY_SLUG_ERROR: {
+    code: 'WORK-0027',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.findThemeIdBySlug',
+  },
+  WORKS_REPOSITORY_UPDATE_DETAILS_BY_ID_AND_USER_ID_ERROR: {
+    code: 'WORK-0028',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.updateDetailsByIdAndUserId',
+  },
 } as const;

@@ -191,4 +191,50 @@ export class WorksRepository {
       );
     return rows.map((row) => row.slug);
   }
+
+  @HandleErrors('WORKS_REPOSITORY_FIND_STATUS_BY_ID_AND_USER_ID_ERROR')
+  async findStatusByIdAndUserId(workId: string, userId: string) {
+    const [work] = await this.db
+      .select({ status: workEntity.status })
+      .from(workEntity)
+      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
+      .limit(1);
+
+    return work;
+  }
+
+  @HandleErrors('WORKS_REPOSITORY_FIND_THEME_ID_BY_SLUG_ERROR')
+  async findThemeIdBySlug(workThemeSlug: string) {
+    const [theme] = await this.db
+      .select({ id: workThemeEntity.id })
+      .from(workThemeEntity)
+      .where(eq(workThemeEntity.slug, workThemeSlug))
+      .limit(1);
+
+    return theme;
+  }
+
+  @HandleErrors('WORKS_REPOSITORY_UPDATE_DETAILS_BY_ID_AND_USER_ID_ERROR')
+  async updateDetailsByIdAndUserId(
+    workId: string,
+    userId: string,
+    title: string,
+    slug: string,
+    synopsis: string | undefined,
+    workThemeId: string,
+  ) {
+    const [work] = await this.db
+      .update(workEntity)
+      .set({
+        title,
+        slug,
+        ...(synopsis === undefined ? {} : { synopsis }),
+        workThemeId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
+      .returning({ id: workEntity.id });
+
+    return { id: work.id };
+  }
 }

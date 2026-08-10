@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   ParseUUIDPipe,
@@ -14,6 +15,8 @@ import { CreateWorkResponseDto } from '../dtos/output/create-work-response.dto';
 import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
 import { CurrentUser } from '@/infrastructure/auth/decorators/current-user.decorator';
 import { WorkResponseByIdDto } from '../dtos/output/work-response-by-id';
+import { UpdateWorkDetailsDto } from '../dtos/input/update-work-details.dto';
+import { UpdateWorkDetailsResponseDto } from '../dtos/output/update-work-details-response.dto';
 
 @Controller('works')
 export class WorksController {
@@ -46,7 +49,24 @@ export class WorksController {
     return this.worksService.create({ ...dto, userId: user.id });
   }
 
-  //🔥 Actualizar los datos de una obra (no incluye cover)
+  @Patch(':id')
+  @ResponseDto(
+    UpdateWorkDetailsResponseDto,
+    'Obra literaria actualizada con éxito',
+  )
+  updateDetails(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateWorkDetailsDto,
+    @CurrentUser() user: RequestUser,
+  ): Promise<UpdateWorkDetailsResponseDto> {
+    return this.worksService.updateDetails(
+      id,
+      user.id,
+      dto.title,
+      dto.synopsis,
+      dto.workThemeSlug,
+    );
+  }
+
   //🔥 TODO: Eliminar una obra
-  //🔥 TODO: Verificar si el slug de una obra se repite
 }
