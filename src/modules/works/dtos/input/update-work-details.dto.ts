@@ -1,7 +1,15 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateWorkDetailsDto {
   @IsString()
+  @IsNotEmpty()
+  @Matches(/\S/)
   @MaxLength(255)
   title: string;
 
@@ -10,5 +18,7 @@ export class UpdateWorkDetailsDto {
   synopsis?: string;
 
   @IsString()
+  @IsNotEmpty()
+  @Matches(/\S/)
   workThemeSlug: string;
 }

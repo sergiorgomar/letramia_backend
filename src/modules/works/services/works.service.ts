@@ -125,13 +125,21 @@ export class WorksService {
       });
     }
 
-    const theme = await this.worksRepository.findThemeIdBySlug(workThemeSlug);
+    const nextTitle = title.trim();
+    const nextWorkThemeSlug = workThemeSlug.trim();
+    const nextSynopsis =
+      synopsis === undefined ? undefined : synopsis.trim() || null;
+
+    const theme =
+      await this.worksRepository.findThemeIdBySlug(nextWorkThemeSlug);
 
     if (!theme) {
-      throw new AppException('WORK_THEME_NOT_FOUND', { workThemeSlug });
+      throw new AppException('WORK_THEME_NOT_FOUND', {
+        workThemeSlug: nextWorkThemeSlug,
+      });
     }
 
-    const slug = slugify(title);
+    const slug = slugify(nextTitle);
     const existingSlugs = await this.worksRepository.findSlugsStartingWith(
       slug,
       workId,
@@ -139,13 +147,36 @@ export class WorksService {
     const nextSlug =
       existingSlugs.length > 0 ? getNextSlug(slug, existingSlugs) : slug;
 
-    return this.worksRepository.updateDetailsByIdAndUserId(
+    const updatedWork = await this.worksRepository.updateDetailsByIdAndUserId(
       workId,
       userId,
-      title,
+      nextTitle,
       nextSlug,
-      synopsis,
+      nextSynopsis,
       theme.id,
     );
+
+    if (updatedWork) return updatedWork;
+
+    const workAfterUpdate = await this.worksRepository.findStatusByIdAndUserId(
+      workId,
+      userId,
+    );
+
+    if (!workAfterUpdate) {
+      throw new AppException('WORK_NOT_FOUND', { workId, userId });
+    }
+
+    if (workAfterUpdate.status === WorkStatus.PUBLISHED) {
+      throw new AppException('WORK_PUBLISHED_CANNOT_BE_UPDATED', {
+        workId,
+        userId,
+      });
+    }
+
+    throw new AppException('WORK_DETAILS_UPDATE_NOT_APPLIED', {
+      workId,
+      userId,
+    });
   }
 }

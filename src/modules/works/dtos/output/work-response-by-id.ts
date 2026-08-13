@@ -50,6 +50,12 @@ export class WorkResponseByIdDto {
   @IsString()
   themeName: string;
 
+  @IsString()
+  workThemeSlug: string;
+
+  @IsBoolean()
+  requiresSynopsis: boolean;
+
   @IsBoolean()
   supportsChapters: boolean;
 

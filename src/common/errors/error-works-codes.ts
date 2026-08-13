@@ -174,4 +174,11 @@ export const WORKS_ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Falló WorksRepository.updateDetailsByIdAndUserId',
   },
+  WORK_DETAILS_UPDATE_NOT_APPLIED: {
+    code: 'WORK-0029',
+    status: 409,
+    message: 'No fue posible actualizar la obra.',
+    internalMessage:
+      'WorksRepository.updateDetailsByIdAndUserId no actualizó una obra en borrador',
+  },
 } as const;

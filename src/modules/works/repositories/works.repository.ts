@@ -8,6 +8,7 @@ import { workThemeEntity } from '../entities/work-theme.entity';
 import { workGenreEntity } from '../entities/work-genre.entity';
 import { ConfigService } from '@nestjs/config';
 import { workChapterEntity } from '../entities/work-chapter.entity';
+import { WorkStatus } from '../types/work-status.enum';
 
 export type WorkEntity = typeof workEntity.$inferSelect;
 export type CreateWorkEntity = {
@@ -67,7 +68,9 @@ export class WorksRepository {
         // updatedAt: workEntity.p,
         genreName: workGenreEntity.name,
         themeName: workThemeEntity.name,
+        themeSlug: workThemeEntity.slug,
 
+        requiresSynopsis: workGenreEntity.requiresSynopsis,
         supportsChapters: workGenreEntity.supportsChapters,
         chapterId: workChapterEntity.id,
         chapterTitle: workChapterEntity.title,
@@ -98,6 +101,8 @@ export class WorksRepository {
       updatedAt: work.updatedAt,
       genreName: work.genreName,
       themeName: work.themeName,
+      workThemeSlug: work.themeSlug,
+      requiresSynopsis: work.requiresSynopsis,
       supportsChapters: work.supportsChapters,
       // 🔥 TODO: thumb.wepb -- magic string
       coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/thumb.webp`,
@@ -220,7 +225,7 @@ export class WorksRepository {
     userId: string,
     title: string,
     slug: string,
-    synopsis: string | undefined,
+    synopsis: string | null | undefined,
     workThemeId: string,
   ) {
     const [work] = await this.db
@@ -232,9 +237,15 @@ export class WorksRepository {
         workThemeId,
         updatedAt: new Date(),
       })
-      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
+      .where(
+        and(
+          eq(workEntity.id, workId),
+          eq(workEntity.userId, userId),
+          eq(workEntity.status, WorkStatus.DRAFT),
+        ),
+      )
       .returning({ id: workEntity.id });
 
-    return { id: work.id };
+    return work;
   }
 }
