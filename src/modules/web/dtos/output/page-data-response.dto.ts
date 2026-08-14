@@ -9,7 +9,8 @@ import {
 } from 'class-validator';
 
 export class SponsorBannerDTO {
-  @IsUrl()
+  //🔥 JUST FOR DEVELOP
+  @IsUrl({ require_tld: false })
   @IsOptional()
   imageUrl: string;
 

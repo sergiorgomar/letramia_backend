@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { and, or, eq, ne, like, desc, asc } from 'drizzle-orm';
+import { and, or, eq, ne, like, desc, asc, sql } from 'drizzle-orm';
 import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 import { workEntity } from '../entities/work.entity';
@@ -44,8 +44,13 @@ export class WorksRepository {
         id: workEntity.id,
         title: workEntity.title,
         status: workEntity.status,
+
+        genreName: workGenreEntity.name,
+        themeName: workThemeEntity.name,
       })
       .from(workEntity)
+      .leftJoin(workGenreEntity, eq(workEntity.workGenreId, workGenreEntity.id))
+      .leftJoin(workThemeEntity, eq(workEntity.workThemeId, workThemeEntity.id))
       .where(eq(workEntity.userId, userId))
       .orderBy(desc(workEntity.createdAt));
 
@@ -65,6 +70,10 @@ export class WorksRepository {
         status: workEntity.status,
         synopsis: workEntity.synopsis,
         updatedAt: workEntity.updatedAt,
+        publishedAt: workEntity.publishedAt,
+        attemptsToPublish: workEntity.publicationAttemptsRemaining,
+        problems: workEntity.problems,
+
         // updatedAt: workEntity.p,
         genreName: workGenreEntity.name,
         themeName: workThemeEntity.name,
@@ -99,11 +108,14 @@ export class WorksRepository {
       status: work.status,
       synopsis: work.synopsis,
       updatedAt: work.updatedAt,
+      publishedAt: work.publishedAt,
       genreName: work.genreName,
       themeName: work.themeName,
       workThemeSlug: work.themeSlug,
       requiresSynopsis: work.requiresSynopsis,
       supportsChapters: work.supportsChapters,
+      attemptsToPublish: work.attemptsToPublish,
+      problems: work.problems ?? [],
       // 🔥 TODO: thumb.wepb -- magic string
       coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/thumb.webp`,
       chapters: rows.flatMap((row) => {
@@ -245,6 +257,91 @@ export class WorksRepository {
         ),
       )
       .returning({ id: workEntity.id });
+
+    return work;
+  }
+
+  @HandleErrors('WORKS_REPOSITORY_FIND_DATA_FOR_PUBLISH')
+  async findDataForPublish(workId: string, userId: string) {
+    const [work] = await this.db
+      .select({
+        status: workEntity.status,
+        publicationAttemptsRemaining: workEntity.publicationAttemptsRemaining,
+        genreSlug: workGenreEntity.slug,
+      })
+      .from(workEntity)
+      .innerJoin(
+        workGenreEntity,
+        eq(workGenreEntity.id, workEntity.workGenreId),
+      )
+      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
+      .limit(1);
+
+    return work;
+  }
+
+  @HandleErrors('WORKS_REPOSITORY_FIND_DATA_FOR_PUBLISH')
+  async markWorkAsRequiresReview(
+    workId: string,
+    userId: string,
+    problems: Array<string>,
+  ) {
+    const [work] = await this.db
+      .update(workEntity)
+      .set({
+        status: WorkStatus.REQUIRES_REVIEW,
+        problems: problems,
+        publicationAttemptsRemaining: sql`${workEntity.publicationAttemptsRemaining} - 1`,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
+      .returning({
+        id: workEntity.id,
+        status: workEntity.status,
+      });
+
+    return work;
+  }
+
+  @HandleErrors('DATABASE_ERROR')
+  async markWorkAsRejected(
+    workId: string,
+    userId: string,
+    problems: Array<string>,
+  ) {
+    const [work] = await this.db
+      .update(workEntity)
+      .set({
+        status: WorkStatus.REJECTED,
+        problems: problems,
+        publicationAttemptsRemaining: 0,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
+      .returning({
+        id: workEntity.id,
+        status: workEntity.status,
+      });
+
+    return work;
+  }
+
+  @HandleErrors('DATABASE_ERROR')
+  async markWorkAsPublished(workId: string, userId: string) {
+    const [work] = await this.db
+      .update(workEntity)
+      .set({
+        status: WorkStatus.PUBLISHED,
+        problems: null,
+        publicationAttemptsRemaining: 3,
+        updatedAt: new Date(),
+        publishedAt: new Date(),
+      })
+      .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
+      .returning({
+        id: workEntity.id,
+        status: workEntity.status,
+      });
 
     return work;
   }

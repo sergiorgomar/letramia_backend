@@ -44,6 +44,10 @@ export class WorkResponseByIdDto {
   @IsDate()
   updatedAt: Date;
 
+  @IsDate()
+  @IsOptional()
+  publishedAt?: Date;
+
   @IsString()
   genreName: string;
 
@@ -58,6 +62,12 @@ export class WorkResponseByIdDto {
 
   @IsBoolean()
   supportsChapters: boolean;
+
+  @IsNumber()
+  attemptsToPublish: number;
+
+  @IsArray()
+  problems: Array<string>;
 
   @IsArray()
   @ValidateNested({ each: true })

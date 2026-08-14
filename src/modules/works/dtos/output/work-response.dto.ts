@@ -11,6 +11,12 @@ export class WorkResponseDto {
   @IsEnum(WorkStatus)
   status: WorkStatus;
 
+  @IsString()
+  themeName: string;
+
+  @IsString()
+  genreName: string;
+
   //🔥 JUST FOR DEVELOP
   @IsUrl({ require_tld: false })
   @IsOptional()

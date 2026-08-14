@@ -41,9 +41,18 @@ export const workEntity = pgTable(
 
     // Toda obra nace como borrador; solo se ve en la web al publicarla.
     status: workStatusEnum('status').notNull().default(WorkStatus.DRAFT),
+
+    // si la obra tiene problemas que deban ser correjidos
+    problems: text('problems').array().default(null),
+
+    // No podemos validar la obra para siempre
+    publicationAttemptsRemaining: integer('publication_attempts_remaining')
+      .notNull()
+      .default(4),
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
-    //publishedAt: timestamp('published_at').notNull().defaultNow(),
+    publishedAt: timestamp('published_at').default(null),
   },
   // 🔥 TODO: reivsar esta implementación, estudiar los indices
   // (table) => ({

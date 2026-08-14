@@ -88,12 +88,18 @@ export class WebService {
     // si la obra es un poema, hay que devolver el content
     let text: null | string = null;
     //🔥 TODO:magic strings ta muy gacho esto aca que poema, almenos un enum pudiera ser
-    if (work.genreSlug == 'poema') {
-      text = await this.privateStorageService.downloadText(
-        `works/${work.id}/poem.html`,
-      );
+    switch (work.genreSlug) {
+      //🔥 TODO: magic strings
+      // FALTA--- Otras obras, otros procesos, deben ir todas las obras que sean con manuscript
+      case 'poema':
+      case 'reseña':
+      case 'cuento':
+        text = await this.privateStorageService.downloadText(
+          `works/${work.id}/manuscript.html`,
+        );
+        break;
     }
-    // FALTA--- Otras obras, otros procesos
+
     //🔥 TODO: implement revalidate cache instead of ttls minutes
     /**
      * Mejor todavía: invalidar la caché cuando haya cambios

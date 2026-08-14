@@ -80,7 +80,8 @@ export const WORKS_ERROR_CATALOG = {
   WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET: {
     code: 'WORK-0015',
     status: 500,
-    message: 'Lo sentimos, esta funcion no esta disponible',
+    message:
+      'Lo sentimos, esta funcion no esta disponible para el genero de su obra.',
     internalMessage: '',
   },
   WORK_CHAPTER_NOT_UUID: {
@@ -180,5 +181,57 @@ export const WORKS_ERROR_CATALOG = {
     message: 'No fue posible actualizar la obra.',
     internalMessage:
       'WorksRepository.updateDetailsByIdAndUserId no actualizó una obra en borrador',
+  },
+  WORK_PUBLISHED_ALREADY_PUBLISHED: {
+    code: 'WORK-0030',
+    status: 409,
+    message: 'Esta obra ya fue publicada.',
+    internalMessage: 'Se intentó publicar una obra ya publicada',
+  },
+  WORK_IS_SPAM: {
+    code: 'WORK-0031',
+    status: 409,
+    message:
+      'No se ha aceptado su solicitud de publicación. Contacte a soporte.',
+    internalMessage: 'La obra tiene SPAM',
+  },
+  WORK_IS_COPY: {
+    code: 'WORK-0032',
+    status: 409,
+    message:
+      'No se ha aceptado su solicitud de publicación. Contacte a soporte.',
+    internalMessage: 'La obra tiene PLAGIO',
+  },
+  WORKS_REPOSITORY_FIND_DATA_FOR_PUBLISH: {
+    code: 'WORK-0033',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.findDataForPublish',
+  },
+  WORK_NOT_ADMITED_FOR_PUBLISH: {
+    code: 'WORK-0034',
+    status: 409,
+    message: 'Este tipo de obra no se puede publicar',
+    internalMessage: 'Se intenta publicar una obra de capitulos',
+  },
+  WORK_HAS_NOT_MANUSCRIPT_FOR_PUBLISH: {
+    code: 'WORK-0035',
+    status: 409,
+    message: 'Su obra no tiene manuscrito. No se puede publicar.',
+    internalMessage: 'Se intenta publicar una obra sin manuscrito',
+  },
+  WORKS_REPOSITORY_HAS_REJECTED: {
+    code: 'WORK-0036',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorksRepository.markWorkAsRejected',
+  },
+  WORKS_NOT_MORE_PUBLISH_ATTEMPTS: {
+    code: 'WORK-0037',
+    status: 409,
+    message:
+      'Esta obra ha sido rechazada por políticas de letramía y no podrá ser publicada.',
+    internalMessage:
+      'Se excedió el limite de reintentos de publicación de la obra',
   },
 } as const;

@@ -7,7 +7,7 @@ import {
 } from '@/infrastructure/image/image-processor.service';
 import { PRIVATE_STORAGE, PUBLIC_STORAGE } from '@/common/constants';
 import { FilesRepository } from '../repositories/files.repository';
-import { getHtmlStats } from '../utils/html-stats';
+import { ContentSecurityUtils } from '@/common/utils/content-security.utils';
 
 @Injectable()
 export class WorksFilesService {
@@ -86,8 +86,13 @@ export class WorksFilesService {
       throw new AppException('WORK_NOT_FOUND', { workId });
     }
 
-    const html = file.buffer.toString('utf8');
-    const { wordCount, characterCount } = getHtmlStats(html);
+    /**
+     * 🔥 DARLE UNA VUELTA A ESTO DE LAS SANITIZADAS, DEL SPAM
+     * ESTA TODO MUY REVUELTO NO SE ENTIENDE BIEN
+     */
+    const { wordCount, characterCount, html } =
+      ContentSecurityUtils.sanitizeHtmlWithStats(file.buffer.toString('utf8'));
+    const sanitizedBuffer = Buffer.from(html, 'utf8');
 
     switch (work.genreSlug) {
       //🔥 TODO: magic strings
@@ -96,7 +101,7 @@ export class WorksFilesService {
       case 'cuento':
         await this.privateStorageService.upload(
           `works/${workId}/manuscript.html`,
-          file.buffer,
+          sanitizedBuffer,
           'text/html',
         );
         await this.filesRepository.updateWorkStats(
@@ -115,7 +120,7 @@ export class WorksFilesService {
         }
         await this.privateStorageService.upload(
           `works/${work.id}/chapters/${work.chapterId}.html`,
-          file.buffer,
+          sanitizedBuffer,
           'text/html',
         );
         await this.filesRepository.updateChapterStats(

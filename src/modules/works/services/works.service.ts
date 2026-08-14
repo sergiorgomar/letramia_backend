@@ -13,6 +13,7 @@ import { CreateWorkResult } from '../types/create-work-result.type';
 import { slugify } from '../utils/slugify';
 import { getNextSlug } from '../utils/get-next-slug';
 import { WorkStatus } from '../types/work-status.enum';
+import { ContentSecurityUtils } from '@/common/utils/content-security.utils';
 
 // const PAGE_DATA_CACHE_TTL_MS = 60_000; // 1minuto
 
@@ -21,7 +22,7 @@ export class WorksService {
   constructor(
     private readonly worksRepository: WorksRepository,
     @Inject(PRIVATE_STORAGE)
-    private readonly supabaseStorageProvider: SupabaseStorageProvider,
+    private readonly privateStorageService: SupabaseStorageProvider,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
   ) {}
@@ -158,25 +159,94 @@ export class WorksService {
 
     if (updatedWork) return updatedWork;
 
-    const workAfterUpdate = await this.worksRepository.findStatusByIdAndUserId(
-      workId,
-      userId,
-    );
-
-    if (!workAfterUpdate) {
-      throw new AppException('WORK_NOT_FOUND', { workId, userId });
-    }
-
-    if (workAfterUpdate.status === WorkStatus.PUBLISHED) {
-      throw new AppException('WORK_PUBLISHED_CANNOT_BE_UPDATED', {
-        workId,
-        userId,
-      });
-    }
-
     throw new AppException('WORK_DETAILS_UPDATE_NOT_APPLIED', {
       workId,
       userId,
     });
+  }
+
+  async publish(
+    workId: string,
+    userId: string,
+  ): Promise<{ status: WorkStatus }> {
+    const work = await this.worksRepository.findDataForPublish(workId, userId);
+
+    if (!work) {
+      throw new AppException('WORK_NOT_FOUND', { workId });
+    }
+
+    if (work.status === WorkStatus.PUBLISHED) {
+      throw new AppException('WORK_PUBLISHED_ALREADY_PUBLISHED', {
+        workId,
+      });
+    }
+
+    if (work.publicationAttemptsRemaining <= 0) {
+      throw new AppException('WORKS_NOT_MORE_PUBLISH_ATTEMPTS', {
+        workId,
+      });
+    }
+
+    //validar que tenga contenido
+    switch (work.genreSlug) {
+      case 'poema':
+      case 'reseña':
+      case 'cuento': {
+        const manuscript = await this.privateStorageService.downloadText(
+          `works/${workId}/manuscript.html`,
+        );
+
+        if (!manuscript || manuscript === null || manuscript === '') {
+          throw new AppException('WORK_HAS_NOT_MANUSCRIPT_FOR_PUBLISH', {
+            workId,
+          });
+        }
+
+        /**
+         * 🔥 DARLE UNA VUELTA A ESTO DE LAS SANITIZADAS, DEL SPAM
+         * ESTA TODO MUY REVUELTO NO SE ENTIENDE BIEN
+         */
+        const planed = ContentSecurityUtils.htmlToPlainText(manuscript);
+        const analysis = ContentSecurityUtils.analyzeSpam(planed);
+        if (analysis.isSpam) {
+          if (work.publicationAttemptsRemaining == 1) {
+            this.worksRepository.markWorkAsRejected(
+              workId,
+              userId,
+              analysis.reasons,
+            );
+            return { status: WorkStatus.REJECTED };
+          } else {
+            this.worksRepository.markWorkAsRequiresReview(
+              workId,
+              userId,
+              analysis.reasons,
+            );
+            return { status: WorkStatus.REQUIRES_REVIEW };
+          }
+        }
+
+        //validar plagio,
+
+        //Publicar obra
+        this.worksRepository.markWorkAsPublished(workId, userId);
+        return { status: WorkStatus.PUBLISHED };
+      }
+      case 'novela':
+      case 'libro': {
+        // si es novela o libro no se puede publicar por este medio,
+        // esos hay que publicar cada capitulo
+        throw new AppException('WORK_NOT_ADMITED_FOR_PUBLISH', {
+          workId,
+          genreSlug: work.genreSlug,
+        });
+      }
+      default: {
+        throw new AppException('WORK_NOT_ADMITED_FOR_PUBLISH', {
+          workId,
+          genreSlug: work.genreSlug,
+        });
+      }
+    }
   }
 }

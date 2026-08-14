@@ -1,4 +1,4 @@
-import { IsBoolean, IsDate, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class PublishedWorkResponseDto {
   @IsString()
@@ -20,7 +20,8 @@ export class PublishedWorkResponseDto {
   @IsString()
   genre: string;
 
-  @IsUrl()
+  //🔥 JUST FOR DEVELOP
+  @IsUrl({ require_tld: false })
   @IsOptional()
   thumbCoverUrl: string | null;
 }

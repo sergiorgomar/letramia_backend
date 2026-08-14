@@ -51,7 +51,8 @@ export class WorkResponseDto {
   @Type(() => ChapterDTO)
   chapters: ChapterDTO[];
 
-  @IsUrl()
+  //🔥 JUST FOR DEVELOP
+  @IsUrl({ require_tld: false })
   @IsOptional()
   coverUrl: string;
 

@@ -17,6 +17,7 @@ import { CurrentUser } from '@/infrastructure/auth/decorators/current-user.decor
 import { WorkResponseByIdDto } from '../dtos/output/work-response-by-id';
 import { UpdateWorkDetailsDto } from '../dtos/input/update-work-details.dto';
 import { UpdateWorkDetailsResponseDto } from '../dtos/output/update-work-details-response.dto';
+import { PublishWorkResponseDto } from '../dtos/output/publish-work-response.dto';
 
 @Controller('works')
 export class WorksController {
@@ -49,6 +50,7 @@ export class WorksController {
     return this.worksService.create({ ...dto, userId: user.id });
   }
 
+  // actualizar los datos de una obra (no incluye cover)
   @Patch(':id')
   @ResponseDto(
     UpdateWorkDetailsResponseDto,
@@ -66,6 +68,16 @@ export class WorksController {
       dto.synopsis,
       dto.workThemeSlug,
     );
+  }
+
+  // Solicitar la publicación de una obra
+  @Post(':workId/publish')
+  @ResponseDto(PublishWorkResponseDto, 'Obra literaria publicada con éxito')
+  publish(
+    @Param('workId', ParseUUIDPipe) workId: string,
+    @CurrentUser() user: RequestUser,
+  ): Promise<PublishWorkResponseDto> {
+    return this.worksService.publish(workId, user.id);
   }
 
   //🔥 TODO: Eliminar una obra
