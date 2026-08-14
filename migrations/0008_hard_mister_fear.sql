@@ -1,0 +1,1 @@
+ALTER TABLE "works" ADD COLUMN "publication_attempts_remaining" integer DEFAULT 3 NOT NULL;

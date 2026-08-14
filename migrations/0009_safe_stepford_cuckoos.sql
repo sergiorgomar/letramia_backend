@@ -1,0 +1,1 @@
+ALTER TABLE "works" ADD COLUMN "published_at" timestamp DEFAULT null;
