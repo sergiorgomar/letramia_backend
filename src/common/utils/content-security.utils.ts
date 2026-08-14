@@ -192,6 +192,8 @@ export class ContentSecurityUtils {
     const text = this.htmlToPlainText(content);
     const normalized = text.toLocaleLowerCase('es-MX');
     const reasons: string[] = [];
+    const words: string[] = text.match(/[\p{L}\p{N}_]+/gu) ?? [];
+
     let score = 0;
 
     // menos de 300 caracteres es conenido pobre
@@ -278,7 +280,6 @@ export class ContentSecurityUtils {
 
     // tasa arriba del 3% de signos.
     const exclamations = (text.match(/[!¡]/g) ?? []).length;
-    const words = text.match(/[\p{L}\p{N}_]+/gu) ?? [];
     const exclamationRate = exclamations / Math.max(words.length, 1);
     if (words.length >= 100 && exclamationRate > 0.03) {
       score += 2;
@@ -290,6 +291,21 @@ export class ContentSecurityUtils {
       score += 2;
       reasons.push(
         'El contenido contiene una secuencia excesiva de signos de exclamación.',
+      );
+    }
+
+    // detecta cosas que no tengan vocales, si el 10% sin palabras son sentido
+    const gibberishWords = words.filter((word) => {
+      if (word.length < 8) return false;
+      const vowels = (word.match(/[aeiouáéíóúü]/giu) ?? []).length;
+      return vowels / word.length < 0.2;
+    });
+
+    const gibberishRate = gibberishWords.length / Math.max(words.length, 1);
+    if (gibberishRate >= 0.1) {
+      score += 5;
+      reasons.push(
+        'El contenido parece contener texto aleatorio o sin sentido.',
       );
     }
 

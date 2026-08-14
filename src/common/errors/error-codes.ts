@@ -80,7 +80,7 @@ export const ERROR_CATALOG = {
   },
   NOT_ADMITED_MAIL: {
     code: 'ACC-0010',
-    status: 401,
+    status: 400,
     message:
       'Error creando su cuenta. El correo electrónico proporcionado no está permitido',
     internalMessage: 'Ingresaron un correo no admitido',
