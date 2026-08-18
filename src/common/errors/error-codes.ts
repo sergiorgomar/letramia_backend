@@ -26,13 +26,13 @@ export const ERROR_CATALOG = {
   ACCOUNT_ALREADY_EXISTS: {
     code: 'ACC-0001',
     status: 409,
-    message: 'Ya existe una cuenta registrada con ese correo.',
+    message: 'No se ha podido crear su cuenta',
     internalMessage: 'Supabase Auth rechazó el signUp: correo duplicado',
   },
   ACCOUNT_ALREADY_EXISTS_IN_DB: {
     code: 'ACC-0003',
     status: 409,
-    message: 'Ya existe una cuenta registrada con ese correo.',
+    message: 'No se ha podido crear su cuenta',
     internalMessage: 'Ya existe una cuenta con ese correo en base de datos',
   },
   SUPABASE_AUTH_ERROR: {
@@ -49,7 +49,7 @@ export const ERROR_CATALOG = {
   },
   USER_DOESNT_EXIST_FOR_LOGIN: {
     code: 'ACC-0005',
-    status: 401,
+    status: 400,
     message: 'Correo o contraseña incorrectos.',
     internalMessage: 'El usuario no existe en base de datos',
   },

@@ -234,4 +234,10 @@ export const WORKS_ERROR_CATALOG = {
     internalMessage:
       'Se excedió el limite de reintentos de publicación de la obra',
   },
+  WORK_IS_TOO_SHORT: {
+    code: 'WORK-0036',
+    status: 409,
+    message: 'Su obra es demasiado corta.',
+    internalMessage: 'Se intenta publicar una con menos de 300 palabras.',
+  },
 } as const;

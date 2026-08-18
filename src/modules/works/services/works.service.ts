@@ -207,6 +207,13 @@ export class WorksService {
          * ESTA TODO MUY REVUELTO NO SE ENTIENDE BIEN
          */
         const planed = ContentSecurityUtils.htmlToPlainText(manuscript);
+
+        if (planed.length < 300) {
+          throw new AppException('WORK_IS_TOO_SHORT', {
+            workId,
+          });
+        }
+
         const analysis = ContentSecurityUtils.analyzeSpam(planed);
         if (analysis.isSpam) {
           if (work.publicationAttemptsRemaining == 1) {
