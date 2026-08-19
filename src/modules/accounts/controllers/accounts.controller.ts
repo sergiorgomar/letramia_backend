@@ -52,25 +52,28 @@ export class AccountsController {
     const result = await this.accountsService.login(dto.email, dto.password);
     response.cookie('access_token', result.accessToken, {
       httpOnly: true,
-      secure: false, //process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'lax',
       path: '/',
+      domain: '.letramia.com',
       maxAge: 60 * 60 * 1000, // ajusta al tiempo real del access token
     });
 
     response.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
-      secure: false, //process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'lax',
       path: '/',
+      domain: '.letramia.com',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     response.cookie('expires_at', result.expiresAt, {
       httpOnly: false, // permite leerla con document.cookie
-      secure: false, //process.env.NODE_ENV === 'production', // HTTPS en producción
+      secure: true, // HTTPS en producción
       sameSite: 'lax',
       path: '/',
+      domain: '.letramia.com',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
   }
@@ -86,25 +89,28 @@ export class AccountsController {
     const result = request.refreshedSession!;
     response.cookie('access_token', result.accessToken, {
       httpOnly: true,
-      secure: false, //process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'lax',
       path: '/',
+      domain: '.letramia.com',
       maxAge: 60 * 60 * 1000, // ajusta al tiempo real del access token
     });
 
     response.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
-      secure: false, //process.env.NODE_ENV === 'production',
+      secure: true,
       sameSite: 'lax',
       path: '/',
+      domain: '.letramia.com',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     response.cookie('expires_at', result.expiresAt, {
       httpOnly: false, // permite leerla con document.cookie
-      secure: false, //process.env.NODE_ENV === 'production', // HTTPS en producción
+      secure: true, // HTTPS en producción
       sameSite: 'lax',
       path: '/',
+      domain: '.letramia.com',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
   }
