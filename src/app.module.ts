@@ -9,6 +9,7 @@ import { DatabaseModule } from '@/infrastructure/database/database.module';
 import { AuthModule } from '@/infrastructure/auth/auth.module';
 import { SupabaseModule } from '@/infrastructure/supabase/supabase.module';
 import { ImageModule } from '@/infrastructure/image/image.module';
+import { MailModule } from '@/infrastructure/mail/mail.module';
 
 // Bussines modules
 import { SystemModule } from '@/modules/system/system.module';
@@ -34,6 +35,7 @@ import { CatalogsModule } from '@/modules/catalogs/catalogs.module';
     AuthModule,
     SupabaseModule,
     ImageModule,
+    MailModule,
 
     // bussines
     FilesModule,
