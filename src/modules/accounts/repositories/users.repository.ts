@@ -51,4 +51,14 @@ export class UsersRepository {
       .limit(1);
     return row;
   }
+
+  @HandleErrors('DATABASE_ERROR')
+  async findById(id: string) {
+    const [row] = await this.db
+      .select({ id: userEntity.id, providerId: userEntity.providerId })
+      .from(userEntity)
+      .where(eq(userEntity.id, id))
+      .limit(1);
+    return row;
+  }
 }

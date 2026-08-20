@@ -1,4 +1,6 @@
+import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
   SUPABASE_ADMIN_PROVIDER,
@@ -7,6 +9,8 @@ import {
 import { AppException } from '@/common/exceptions/app.exception';
 import { ProviderName } from '@/infrastructure/auth/types/provider-name.enum';
 import { UserType } from '@/infrastructure/auth/types/user-type.enum';
+import { ResendMailService } from '@/infrastructure/mail/resend-mail.service';
+import { PasswordResetTokensRepository } from '../repositories/password-reset-tokens.repository';
 import { UsersRepository } from '../repositories/users.repository';
 
 const CURRENT_AUTH_PROVIDER = ProviderName.SUPABASE;
@@ -19,6 +23,9 @@ export class AccountsService {
     @Inject(SUPABASE_ANON_PROVIDER)
     private readonly supabaseAnon: SupabaseClient,
     private readonly usersRepository: UsersRepository,
+    private readonly passwordResetTokensRepository: PasswordResetTokensRepository,
+    private readonly mail: ResendMailService,
+    private readonly config: ConfigService,
   ) {}
 
   async createAccount(
@@ -102,5 +109,52 @@ export class AccountsService {
       refreshToken: data.session.refresh_token,
       expiresAt: data.session.expires_at!,
     };
+  }
+
+  async recoverAccount(email: string) {
+    const user = await this.usersRepository.findByEmail(email);
+    if (!user || !user.active) return;
+
+    const token = randomBytes(32).toString('base64url');
+    const hash = createHash('sha256').update(token).digest('hex');
+
+    // 1 hora
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.passwordResetTokensRepository.create({
+      hash,
+      userId: user.id,
+      expiresAt,
+    });
+
+    const resetUrl = new URL(
+      this.config.getOrThrow<string>('PASSWORD_RESET_URL'),
+    );
+    resetUrl.searchParams.set('hash', token);
+
+    return this.mail.sendRecoverPassword(email, resetUrl.toString());
+  }
+
+  async resetPassword(hash: string, password: string): Promise<void> {
+    const tokenHash = createHash('sha256').update(hash).digest('hex');
+    const token = await this.passwordResetTokensRepository.consume(tokenHash);
+
+    if (!token) {
+      throw new AppException('PASSWORD_RESET_TOKEN_INVALID');
+    }
+
+    const user = await this.usersRepository.findById(token.userId);
+    if (!user) {
+      throw new AppException('PASSWORD_RESET_USER_NOT_FOUND');
+    }
+
+    const { error } = await this.supabaseAdmin.auth.admin.updateUserById(
+      user.providerId,
+      { password },
+    );
+
+    if (error) {
+      throw new AppException('SUPABASE_AUTH_ERROR', { userId: user.id }, error);
+    }
   }
 }

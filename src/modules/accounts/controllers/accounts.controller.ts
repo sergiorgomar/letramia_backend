@@ -23,6 +23,10 @@ import {
   RefreshRequest,
   RefreshTokenGuard,
 } from '../guards/refresh-token.guard';
+import { RecoverAccountResponseDto } from '../dtos/output/recover-account-response.dto';
+import { RecoverAccountDto } from '../dtos/input/recover-account.dto';
+import { ResetPasswordDto } from '../dtos/input/reset-password.dto';
+import { ResetPasswordResponseDto } from '../dtos/output/reset-password-response.dto';
 
 // 🔥🔥 proteger el controller con un middleware contra ataques de fuerza bruta
 // 🔥🔥 proteger el controller con un captcha de que no son robots
@@ -52,28 +56,28 @@ export class AccountsController {
     const result = await this.accountsService.login(dto.email, dto.password);
     response.cookie('access_token', result.accessToken, {
       httpOnly: true,
-      secure: true,
+      //secure: true,
       sameSite: 'lax',
       path: '/',
-      domain: '.letramia.com',
+      //domain: '.letramia.com',
       maxAge: 60 * 60 * 1000, // ajusta al tiempo real del access token
     });
 
     response.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
-      secure: true,
+      //secure: true,
       sameSite: 'lax',
       path: '/',
-      domain: '.letramia.com',
+      //domain: '.letramia.com',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     response.cookie('expires_at', result.expiresAt, {
       httpOnly: false, // permite leerla con document.cookie
-      secure: true, // HTTPS en producción
+      //secure: true, // HTTPS en producción
       sameSite: 'lax',
       path: '/',
-      domain: '.letramia.com',
+      //domain: '.letramia.com',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
   }
@@ -89,28 +93,28 @@ export class AccountsController {
     const result = request.refreshedSession!;
     response.cookie('access_token', result.accessToken, {
       httpOnly: true,
-      secure: true,
+      //secure: true,
       sameSite: 'lax',
       path: '/',
-      domain: '.letramia.com',
+      //domain: '.letramia.com',
       maxAge: 60 * 60 * 1000, // ajusta al tiempo real del access token
     });
 
     response.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
-      secure: true,
+      //secure: true,
       sameSite: 'lax',
       path: '/',
-      domain: '.letramia.com',
+      //domain: '.letramia.com',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     response.cookie('expires_at', result.expiresAt, {
       httpOnly: false, // permite leerla con document.cookie
-      secure: true, // HTTPS en producción
+      //secure: true, // HTTPS en producción
       sameSite: 'lax',
       path: '/',
-      domain: '.letramia.com',
+      //domain: '.letramia.com',
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
   }
@@ -119,5 +123,26 @@ export class AccountsController {
   @ResponseDto(MeResponseDto, 'Usuario autenticado con éxito')
   me(@CurrentUser() user: RequestUser): MeResponseDto {
     return { id: user.id, name: user.name };
+  }
+
+  @Public()
+  @Post('recover-account')
+  @ResponseDto(RecoverAccountResponseDto, 'Usuario recuperado con éxito')
+  async recoverAccount(
+    @Body() dto: RecoverAccountDto,
+  ): Promise<RecoverAccountResponseDto> {
+    await this.accountsService.recoverAccount(dto.email);
+    return { ok: true };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ResponseDto(ResetPasswordResponseDto, 'Contraseña actualizada con éxito')
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+  ): Promise<ResetPasswordResponseDto> {
+    await this.accountsService.resetPassword(dto.hash, dto.password);
+    return { ok: true };
   }
 }
