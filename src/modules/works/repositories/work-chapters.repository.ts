@@ -90,6 +90,7 @@ export class WorkChaptersRepository {
           eq(workChapterEntity.workId, workId),
           sql`${workChapterEntity.sequence} < ${sequence}`,
           ne(workChapterEntity.status, WorkStatus.PUBLISHED),
+          ne(workChapterEntity.status, WorkStatus.REJECTED),
         ),
       )
       .limit(1);
@@ -146,23 +147,45 @@ export class WorkChaptersRepository {
 
   @HandleErrors('WORK_CHAPTERS_REPOSITORY_MARK_AS_REJECTED_ERROR')
   async markAsRejected(chapterId: string, workId: string, problems: string[]) {
-    const [chapter] = await this.db
-      .update(workChapterEntity)
-      .set({
-        status: WorkStatus.REJECTED,
-        problems,
-        publicationAttemptsRemaining: 0,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(workChapterEntity.id, chapterId),
-          eq(workChapterEntity.workId, workId),
-        ),
-      )
-      .returning({ status: workChapterEntity.status });
+    return this.db.transaction(async (transaction) => {
+      const [chapter] = await transaction
+        .update(workChapterEntity)
+        .set({
+          status: WorkStatus.REJECTED,
+          sequence: null,
+          problems,
+          publicationAttemptsRemaining: 0,
+          rejectedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(workChapterEntity.id, chapterId),
+            eq(workChapterEntity.workId, workId),
+          ),
+        )
+        .returning({ status: workChapterEntity.status });
 
-    return chapter;
+      const activeChapters = await transaction
+        .select({ id: workChapterEntity.id })
+        .from(workChapterEntity)
+        .where(
+          and(
+            eq(workChapterEntity.workId, workId),
+            ne(workChapterEntity.status, WorkStatus.REJECTED),
+          ),
+        )
+        .orderBy(asc(workChapterEntity.sequence));
+
+      for (const [index, activeChapter] of activeChapters.entries()) {
+        await transaction
+          .update(workChapterEntity)
+          .set({ sequence: index + 1, updatedAt: new Date() })
+          .where(eq(workChapterEntity.id, activeChapter.id));
+      }
+
+      return chapter;
+    });
   }
 
   @HandleErrors('WORK_CHAPTERS_REPOSITORY_FIND_BY_SLUG_AND_WORK_ID_ERROR')
@@ -186,7 +209,12 @@ export class WorkChaptersRepository {
     const [chapter] = await this.db
       .select({ sequence: workChapterEntity.sequence })
       .from(workChapterEntity)
-      .where(eq(workChapterEntity.workId, workId))
+      .where(
+        and(
+          eq(workChapterEntity.workId, workId),
+          ne(workChapterEntity.status, WorkStatus.REJECTED),
+        ),
+      )
       .orderBy(desc(workChapterEntity.sequence))
       .limit(1);
 
@@ -233,7 +261,12 @@ export class WorkChaptersRepository {
       const chapters = await transaction
         .select({ id: workChapterEntity.id })
         .from(workChapterEntity)
-        .where(eq(workChapterEntity.workId, workId))
+        .where(
+          and(
+            eq(workChapterEntity.workId, workId),
+            ne(workChapterEntity.status, WorkStatus.REJECTED),
+          ),
+        )
         .orderBy(asc(workChapterEntity.sequence));
 
       for (const [index, chapter] of chapters.entries()) {

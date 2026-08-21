@@ -186,6 +186,13 @@ export class WorkChaptersService {
       });
     }
 
+    if (chapter.sequence === null) {
+      throw new AppException('CHAPTER_NOT_IN_ACTIVE_SEQUENCE', {
+        workId,
+        chapterId,
+      });
+    }
+
     // Se intenta publicar una obra que no es el orden adecuado
     const hasUnpublishedChapterBefore =
       await this.workChaptersRepository.hasUnpublishedBefore(

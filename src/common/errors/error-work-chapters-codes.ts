@@ -159,4 +159,11 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     internalMessage:
       'Se intentó reordenar una obra cambiando la posición de un capítulo publicado',
   },
+  CHAPTER_NOT_IN_ACTIVE_SEQUENCE: {
+    code: 'CHAP-0027',
+    status: 409,
+    message: 'Este capítulo ya no forma parte de la secuencia de publicación.',
+    internalMessage:
+      'Se intentó publicar un capítulo sin secuencia activa, normalmente rechazado',
+  },
 } as const;
