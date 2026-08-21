@@ -5,7 +5,8 @@ import {
   integer,
   timestamp,
 } from 'drizzle-orm/pg-core';
-import { workEntity } from './work.entity';
+import { WorkStatus } from '../types/work-status.enum';
+import { workEntity, workStatusEnum } from './work.entity';
 
 export const workChapterEntity = pgTable('work_chapters', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -17,6 +18,9 @@ export const workChapterEntity = pgTable('work_chapters', {
   wordCount: integer('word_count').notNull().default(0),
   characterCount: integer('character_count').notNull().default(0),
   sequence: integer('sequence').notNull(),
+  // Los capítulos nacen como borrador y se publican de forma independiente.
+  status: workStatusEnum('status').notNull().default(WorkStatus.DRAFT),
+  publishedAt: timestamp('published_at').default(null),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
