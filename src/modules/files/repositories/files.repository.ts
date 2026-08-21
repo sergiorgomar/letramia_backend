@@ -34,8 +34,10 @@ export class FilesRepository {
     const [work] = await this.db
       .select({
         id: workEntity.id,
+        workStatus: workEntity.status,
         genreSlug: workGenreEntity.slug,
         chapterId: workChapterEntity.id,
+        chapterStatus: workChapterEntity.status,
       })
       .from(workEntity)
       .innerJoin(

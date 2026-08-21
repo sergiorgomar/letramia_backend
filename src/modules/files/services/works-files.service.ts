@@ -8,6 +8,7 @@ import {
 import { PRIVATE_STORAGE, PUBLIC_STORAGE } from '@/common/constants';
 import { FilesRepository } from '../repositories/files.repository';
 import { ContentSecurityUtils } from '@/common/utils/content-security.utils';
+import { WorkStatus } from '@/modules/works/types/work-status.enum';
 
 @Injectable()
 export class WorksFilesService {
@@ -84,6 +85,23 @@ export class WorksFilesService {
     );
     if (!work) {
       throw new AppException('WORK_NOT_FOUND', { workId });
+    }
+
+    if (work.workStatus === WorkStatus.REJECTED) {
+      throw new AppException('CHAPTER_WORK_REJECTED_CANNOT_BE_CHANGED', {
+        workId,
+      });
+    }
+
+    if (
+      work.chapterStatus === WorkStatus.PUBLISHED ||
+      work.chapterStatus === WorkStatus.REJECTED
+    ) {
+      throw new AppException('CHAPTER_STATUS_CANNOT_BE_CHANGED', {
+        workId,
+        chapterId,
+        status: work.chapterStatus,
+      });
     }
 
     /**

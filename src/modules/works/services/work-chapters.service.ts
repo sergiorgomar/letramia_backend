@@ -28,6 +28,12 @@ export class WorkChaptersService {
       throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId });
     }
 
+    if (work.status === WorkStatus.REJECTED) {
+      throw new AppException('CHAPTER_WORK_REJECTED_CANNOT_BE_CHANGED', {
+        workId,
+      });
+    }
+
     if (!work.supportsChapters) {
       throw new AppException('CHAPTERS_NOT_SUPPORTED_FOR_WORK_GENRE', {
         workId,
@@ -72,6 +78,12 @@ export class WorkChaptersService {
 
     if (!work) {
       throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId, userId });
+    }
+
+    if (work.status === WorkStatus.REJECTED) {
+      throw new AppException('CHAPTER_WORK_REJECTED_CANNOT_BE_CHANGED', {
+        workId,
+      });
     }
 
     const chapters =
@@ -121,6 +133,12 @@ export class WorkChaptersService {
       throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId, userId });
     }
 
+    if (work.status === WorkStatus.REJECTED) {
+      throw new AppException('CHAPTER_WORK_REJECTED_CANNOT_BE_CHANGED', {
+        workId,
+      });
+    }
+
     const chapter = await this.workChaptersRepository.findByIdAndWorkId(
       chapterId,
       workId,
@@ -128,6 +146,17 @@ export class WorkChaptersService {
 
     if (!chapter) {
       throw new AppException('CHAPTER_NOT_FOUND', { workId, chapterId });
+    }
+
+    if (
+      chapter.status === WorkStatus.PUBLISHED ||
+      chapter.status === WorkStatus.REJECTED
+    ) {
+      throw new AppException('CHAPTER_STATUS_CANNOT_BE_CHANGED', {
+        workId,
+        chapterId,
+        status: chapter.status,
+      });
     }
 
     const slug = slugify(title);
@@ -154,6 +183,12 @@ export class WorkChaptersService {
 
     if (!work) {
       throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId });
+    }
+
+    if (work.status === WorkStatus.REJECTED) {
+      throw new AppException('CHAPTER_WORK_REJECTED_CANNOT_BE_CHANGED', {
+        workId,
+      });
     }
 
     if (!work.supportsChapters) {
@@ -275,6 +310,12 @@ export class WorkChaptersService {
       throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId, userId });
     }
 
+    if (work.status === WorkStatus.REJECTED) {
+      throw new AppException('CHAPTER_WORK_REJECTED_CANNOT_BE_CHANGED', {
+        workId,
+      });
+    }
+
     const chapter = await this.workChaptersRepository.findByIdAndWorkId(
       chapterId,
       workId,
@@ -282,6 +323,17 @@ export class WorkChaptersService {
 
     if (!chapter) {
       throw new AppException('CHAPTER_NOT_FOUND', { workId, chapterId });
+    }
+
+    if (
+      chapter.status === WorkStatus.PUBLISHED ||
+      chapter.status === WorkStatus.REJECTED
+    ) {
+      throw new AppException('CHAPTER_STATUS_CANNOT_BE_CHANGED', {
+        workId,
+        chapterId,
+        status: chapter.status,
+      });
     }
 
     const path = `works/${workId}/chapters/${chapterId}.html`;

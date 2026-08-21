@@ -172,4 +172,18 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     internalMessage:
       'Se intentó publicar un capítulo sin secuencia activa, normalmente rechazado',
   },
+  CHAPTER_STATUS_CANNOT_BE_CHANGED: {
+    code: 'CHAP-0029',
+    status: 409,
+    message: 'No puedes modificar un capítulo publicado o rechazado.',
+    internalMessage:
+      'Se intentó modificar o eliminar un capítulo publicado o rechazado',
+  },
+  CHAPTER_WORK_REJECTED_CANNOT_BE_CHANGED: {
+    code: 'CHAP-0030',
+    status: 409,
+    message: 'No puedes modificar una obra rechazada.',
+    internalMessage:
+      'Se intentó modificar capítulos de una obra con status rejected',
+  },
 } as const;

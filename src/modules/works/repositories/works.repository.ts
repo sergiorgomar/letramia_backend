@@ -47,6 +47,7 @@ export class WorksRepository {
 
         genreName: workGenreEntity.name,
         themeName: workThemeEntity.name,
+        supportsChapters: workGenreEntity.supportsChapters,
       })
       .from(workEntity)
       .leftJoin(workGenreEntity, eq(workEntity.workGenreId, workGenreEntity.id))

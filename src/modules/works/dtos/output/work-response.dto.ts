@@ -1,4 +1,11 @@
-import { IsEnum, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUrl,
+  IsUUID,
+} from 'class-validator';
 import { WorkStatus } from '../../types/work-status.enum';
 
 export class WorkResponseDto {
@@ -16,6 +23,9 @@ export class WorkResponseDto {
 
   @IsString()
   genreName: string;
+
+  @IsBoolean()
+  supportsChapters: boolean;
 
   //🔥 JUST FOR DEVELOP
   @IsUrl({ require_tld: false })
