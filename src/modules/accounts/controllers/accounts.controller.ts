@@ -27,12 +27,17 @@ import { RecoverAccountResponseDto } from '../dtos/output/recover-account-respon
 import { RecoverAccountDto } from '../dtos/input/recover-account.dto';
 import { ResetPasswordDto } from '../dtos/input/reset-password.dto';
 import { ResetPasswordResponseDto } from '../dtos/output/reset-password-response.dto';
+import { ConfigService } from '@nestjs/config';
+import { setAuthCookies } from '../utils/set-auth-cookies';
 
 // 🔥🔥 proteger el controller con un middleware contra ataques de fuerza bruta
 // 🔥🔥 proteger el controller con un captcha de que no son robots
 @Controller('accounts')
 export class AccountsController {
-  constructor(private readonly accountsService: AccountsService) {}
+  constructor(
+    private readonly accountsService: AccountsService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Public()
   @Post('create-account')
@@ -54,32 +59,9 @@ export class AccountsController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.accountsService.login(dto.email, dto.password);
-    response.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      domain: '.letramia.com',
-      maxAge: 60 * 60 * 1000, // ajusta al tiempo real del access token
-    });
-
-    response.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      domain: '.letramia.com',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-
-    response.cookie('expires_at', result.expiresAt, {
-      httpOnly: false, // permite leerla con document.cookie
-      secure: true, // HTTPS en producción
-      sameSite: 'lax',
-      path: '/',
-      domain: '.letramia.com',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    const isProduction =
+      this.configService.get<string>('OWN_ENVIROMENT') === 'production';
+    setAuthCookies(response, result, isProduction);
   }
 
   @Public()
@@ -91,32 +73,9 @@ export class AccountsController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const result = request.refreshedSession!;
-    response.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      domain: '.letramia.com',
-      maxAge: 60 * 60 * 1000, // ajusta al tiempo real del access token
-    });
-
-    response.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      domain: '.letramia.com',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-
-    response.cookie('expires_at', result.expiresAt, {
-      httpOnly: false, // permite leerla con document.cookie
-      secure: true, // HTTPS en producción
-      sameSite: 'lax',
-      path: '/',
-      domain: '.letramia.com',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    const isProduction =
+      this.configService.get<string>('OWN_ENVIROMENT') === 'production';
+    setAuthCookies(response, result, isProduction);
   }
 
   @Get('me')
