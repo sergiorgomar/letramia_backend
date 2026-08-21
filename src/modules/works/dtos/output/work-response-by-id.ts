@@ -20,6 +20,19 @@ export class ChapterDTO {
   @IsString()
   title: string;
 
+  @IsEnum(WorkStatus)
+  status: WorkStatus;
+
+  @IsDate()
+  @IsOptional()
+  publishedAt: Date | null;
+
+  @IsArray()
+  problems: Array<string>;
+
+  @IsNumber()
+  attemptsToPublish: number;
+
   @IsNumber()
   wordCount: number;
 

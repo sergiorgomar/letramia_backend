@@ -83,6 +83,11 @@ export class WorksRepository {
         supportsChapters: workGenreEntity.supportsChapters,
         chapterId: workChapterEntity.id,
         chapterTitle: workChapterEntity.title,
+        chapterStatus: workChapterEntity.status,
+        chapterPublishedAt: workChapterEntity.publishedAt,
+        chapterProblems: workChapterEntity.problems,
+        chapterAttemptsToPublish:
+          workChapterEntity.publicationAttemptsRemaining,
         chapterWordCount: workChapterEntity.wordCount,
         chapterCharacterCount: workChapterEntity.characterCount,
       })
@@ -131,6 +136,10 @@ export class WorksRepository {
           {
             id: row.chapterId,
             title: row.chapterTitle,
+            status: row.chapterStatus,
+            publishedAt: row.chapterPublishedAt,
+            problems: row.chapterProblems ?? [],
+            attemptsToPublish: row.chapterAttemptsToPublish,
             wordCount: row.chapterWordCount,
             characterCount: row.chapterCharacterCount,
           },
