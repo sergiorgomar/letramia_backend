@@ -172,7 +172,12 @@ export class WebRepository {
         title: workChapterEntity.title,
       })
       .from(workChapterEntity)
-      .where(eq(workChapterEntity.workId, work.id))
+      .where(
+        and(
+          eq(workChapterEntity.workId, work.id),
+          eq(workChapterEntity.status, WorkStatus.PUBLISHED),
+        ),
+      )
       .orderBy(asc(workChapterEntity.sequence));
     return {
       ...work,
@@ -247,7 +252,7 @@ export class WebRepository {
   }
 
   @HandleErrors('DATABASE_ERROR')
-  async findWorkAndChapterIdsBySlugs(workSlug: string, chapterSlug: string) {
+  async findPublishedChapterBySlugs(workSlug: string, chapterSlug: string) {
     const [row] = await this.db
       .select({
         workId: workEntity.id,
@@ -261,6 +266,7 @@ export class WebRepository {
             FROM ${workChapterEntity} AS next_chapter
             WHERE next_chapter.work_id = ${workEntity.id}
               AND next_chapter.sequence > ${workChapterEntity.sequence}
+              AND next_chapter.status = 'published'
             ORDER BY next_chapter.sequence ASC
             LIMIT 1
           )
@@ -271,6 +277,7 @@ export class WebRepository {
             FROM ${workChapterEntity} AS previous_chapter
             WHERE previous_chapter.work_id = ${workEntity.id}
               AND previous_chapter.sequence < ${workChapterEntity.sequence}
+              AND previous_chapter.status = 'published'
             ORDER BY previous_chapter.sequence DESC
             LIMIT 1
           )
@@ -280,6 +287,7 @@ export class WebRepository {
             SELECT COUNT(*)
             FROM ${workChapterEntity} AS chapter_count
             WHERE chapter_count.work_id = ${workEntity.id}
+              AND chapter_count.status = 'published'
           )
         `.mapWith(Number),
         bookThemeName: workThemeEntity.name,
@@ -298,6 +306,7 @@ export class WebRepository {
           eq(workEntity.slug, workSlug),
           eq(workEntity.status, WorkStatus.PUBLISHED),
           eq(workChapterEntity.slug, chapterSlug),
+          eq(workChapterEntity.status, WorkStatus.PUBLISHED),
         ),
       )
       .limit(1);

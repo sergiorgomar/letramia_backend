@@ -148,6 +148,23 @@ export class WebService {
     }
     if (cachedData) return cachedData;
 
+    const chapter = await this.webRepository.findPublishedChapterBySlugs(
+      workSlug,
+      chapterSlug,
+    );
+
+    if (!chapter) {
+      await this.cacheManager.set(
+        cacheKey,
+        WORK_NOT_FOUND_VALUE,
+        PAGE_DATA_CACHE_TTL_MS,
+      );
+      throw new AppException('WEB_CONTENT_NOT_FOUND_FOR_SLUGS', {
+        workSlug,
+        chapterSlug,
+      });
+    }
+
     const {
       workId,
       chapterId,
@@ -160,10 +177,7 @@ export class WebService {
       chapterSequence,
       nextChapterSlug,
       previousChapterSlug,
-    } = await this.webRepository.findWorkAndChapterIdsBySlugs(
-      workSlug,
-      chapterSlug,
-    );
+    } = chapter;
 
     if (!workId || !chapterId) {
       await this.cacheManager.set(
