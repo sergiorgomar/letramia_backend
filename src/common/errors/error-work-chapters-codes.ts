@@ -77,6 +77,12 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Falló WorkChaptersRepository.hasUnpublishedBefore',
   },
+  WORK_CHAPTERS_REPOSITORY_COUNT_REJECTED_BY_WORK_ID_ERROR: {
+    code: 'CHAP-0028',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorkChaptersRepository.countRejectedByWorkId',
+  },
   CHAPTER_WORK_NOT_FOUND: {
     code: 'CHAP-0004',
     status: 404,

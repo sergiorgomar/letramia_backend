@@ -103,6 +103,21 @@ export class WorkChaptersRepository {
     return Boolean(chapter);
   }
 
+  @HandleErrors('WORK_CHAPTERS_REPOSITORY_COUNT_REJECTED_BY_WORK_ID_ERROR')
+  async countRejectedByWorkId(workId: string) {
+    const [result] = await this.db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(workChapterEntity)
+      .where(
+        and(
+          eq(workChapterEntity.workId, workId),
+          eq(workChapterEntity.status, WorkStatus.REJECTED),
+        ),
+      );
+
+    return result.count;
+  }
+
   @HandleErrors('WORK_CHAPTERS_REPOSITORY_MARK_AS_PUBLISHED_ERROR')
   async markAsPublished(chapterId: string, workId: string) {
     const [chapter] = await this.db

@@ -226,11 +226,22 @@ export class WorkChaptersService {
     const analysis = ContentSecurityUtils.analyzeSpam(plainText);
     if (analysis.isSpam) {
       if (chapter.publicationAttemptsRemaining === 1) {
-        return this.workChaptersRepository.markAsRejected(
-          chapterId,
-          workId,
-          analysis.reasons,
-        );
+        const rejectedChapter =
+          await this.workChaptersRepository.markAsRejected(
+            chapterId,
+            workId,
+            analysis.reasons,
+          );
+
+        const rejectedChapterCount =
+          await this.workChaptersRepository.countRejectedByWorkId(workId);
+        if (rejectedChapterCount >= 3) {
+          await this.worksRepository.markWorkAsRejected(workId, userId, [
+            `La obra acumuló ${rejectedChapterCount} capítulos rechazados por políticas de publicación.`,
+          ]);
+        }
+
+        return rejectedChapter;
       }
 
       return this.workChaptersRepository.markAsRequiresReview(

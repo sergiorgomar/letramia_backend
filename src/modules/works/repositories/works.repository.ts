@@ -324,6 +324,7 @@ export class WorksRepository {
         status: WorkStatus.REJECTED,
         problems: problems,
         publicationAttemptsRemaining: 0,
+        rejectedAt: new Date(),
         updatedAt: new Date(),
       })
       .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
