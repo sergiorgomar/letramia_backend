@@ -21,6 +21,7 @@ import { CreateWorkChapterResponseDto } from '../dtos/output/create-work-chapter
 import { ChangeWorkChaptersOrderResponseDto } from '../dtos/output/change-work-chapters-order-response.dto';
 import { UpdateWorkChapterTitleResponseDto } from '../dtos/output/update-work-chapter-title-response.dto';
 import { DeleteWorkChapterResponseDto } from '../dtos/output/delete-work-chapter-response.dto';
+import { PublishWorkChapterResponseDto } from '../dtos/output/publish-work-chapter-response.dto';
 
 @Controller('works/:workId/chapters')
 export class WorkChaptersController {
@@ -67,6 +68,16 @@ export class WorkChaptersController {
       user.id,
       dto.title,
     );
+  }
+
+  @Post(':chapterId/publish')
+  @ResponseDto(PublishWorkChapterResponseDto, 'Capítulo publicado con éxito')
+  publish(
+    @Param('workId', ParseUUIDPipe) workId: string,
+    @Param('chapterId', ParseUUIDPipe) chapterId: string,
+    @CurrentUser() user: RequestUser,
+  ): Promise<PublishWorkChapterResponseDto> {
+    return this.workChaptersService.publish(workId, chapterId, user.id);
   }
 
   @Delete(':chapterId')

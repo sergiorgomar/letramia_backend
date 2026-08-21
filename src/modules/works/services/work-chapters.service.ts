@@ -2,8 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PRIVATE_STORAGE } from '@/common/constants';
 import { AppException } from '@/common/exceptions/app.exception';
 import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-storage.provider';
+import { ContentSecurityUtils } from '@/common/utils/content-security.utils';
 import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
 import { slugify } from '../utils/slugify';
+import { WorkStatus } from '../types/work-status.enum';
 
 @Injectable()
 export class WorkChaptersService {
@@ -129,6 +131,82 @@ export class WorkChaptersService {
     }
 
     return this.workChaptersRepository.updateTitle(chapterId, title, slug);
+  }
+
+  async publish(workId: string, chapterId: string, userId: string) {
+    const work = await this.workChaptersRepository.findWorkByIdAndUserId(
+      workId,
+      userId,
+    );
+
+    if (!work) {
+      throw new AppException('CHAPTER_WORK_NOT_FOUND', { workId });
+    }
+
+    if (!work.supportsChapters) {
+      throw new AppException('CHAPTERS_NOT_SUPPORTED_FOR_WORK_GENRE', {
+        workId,
+        workGenreId: work.workGenreId,
+      });
+    }
+
+    const chapter = await this.workChaptersRepository.findByIdAndWorkId(
+      chapterId,
+      workId,
+    );
+
+    if (!chapter) {
+      throw new AppException('CHAPTER_NOT_FOUND', { workId, chapterId });
+    }
+
+    if (chapter.status === WorkStatus.PUBLISHED) {
+      throw new AppException('CHAPTER_ALREADY_PUBLISHED', {
+        workId,
+        chapterId,
+      });
+    }
+
+    if (chapter.publicationAttemptsRemaining <= 0) {
+      throw new AppException('CHAPTER_NOT_MORE_PUBLISH_ATTEMPTS', {
+        workId,
+        chapterId,
+      });
+    }
+
+    const manuscript = await this.privateStorageService.downloadText(
+      `works/${workId}/chapters/${chapterId}.html`,
+    );
+
+    if (!manuscript?.trim()) {
+      throw new AppException('CHAPTER_HAS_NOT_MANUSCRIPT_FOR_PUBLISH', {
+        workId,
+        chapterId,
+      });
+    }
+
+    const plainText = ContentSecurityUtils.htmlToPlainText(manuscript);
+    if (plainText.length < 300) {
+      throw new AppException('CHAPTER_IS_TOO_SHORT', { workId, chapterId });
+    }
+
+    const analysis = ContentSecurityUtils.analyzeSpam(plainText);
+    if (analysis.isSpam) {
+      if (chapter.publicationAttemptsRemaining === 1) {
+        return this.workChaptersRepository.markAsRejected(
+          chapterId,
+          workId,
+          analysis.reasons,
+        );
+      }
+
+      return this.workChaptersRepository.markAsRequiresReview(
+        chapterId,
+        workId,
+        analysis.reasons,
+      );
+    }
+
+    return this.workChaptersRepository.markAsPublished(chapterId, workId);
   }
 
   async delete(workId: string, chapterId: string, userId: string) {

@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
 import { workChapterEntity } from '../entities/work-chapter.entity';
 import { workEntity } from '../entities/work.entity';
 import { workGenreEntity } from '../entities/work-genre.entity';
+import { WorkStatus } from '../types/work-status.enum';
 
 @Injectable()
 export class WorkChaptersRepository {
@@ -60,6 +61,9 @@ export class WorkChaptersRepository {
     const [chapter] = await this.db
       .select({
         id: workChapterEntity.id,
+        status: workChapterEntity.status,
+        publicationAttemptsRemaining:
+          workChapterEntity.publicationAttemptsRemaining,
       })
       .from(workChapterEntity)
       .where(
@@ -69,6 +73,74 @@ export class WorkChaptersRepository {
         ),
       )
       .limit(1);
+
+    return chapter;
+  }
+
+  @HandleErrors('WORK_CHAPTERS_REPOSITORY_MARK_AS_PUBLISHED_ERROR')
+  async markAsPublished(chapterId: string, workId: string) {
+    const [chapter] = await this.db
+      .update(workChapterEntity)
+      .set({
+        status: WorkStatus.PUBLISHED,
+        problems: null,
+        publicationAttemptsRemaining: 3,
+        publishedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(workChapterEntity.id, chapterId),
+          eq(workChapterEntity.workId, workId),
+        ),
+      )
+      .returning({ status: workChapterEntity.status });
+
+    return chapter;
+  }
+
+  @HandleErrors('WORK_CHAPTERS_REPOSITORY_MARK_AS_REQUIRES_REVIEW_ERROR')
+  async markAsRequiresReview(
+    chapterId: string,
+    workId: string,
+    problems: string[],
+  ) {
+    const [chapter] = await this.db
+      .update(workChapterEntity)
+      .set({
+        status: WorkStatus.REQUIRES_REVIEW,
+        problems,
+        publicationAttemptsRemaining: sql`${workChapterEntity.publicationAttemptsRemaining} - 1`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(workChapterEntity.id, chapterId),
+          eq(workChapterEntity.workId, workId),
+        ),
+      )
+      .returning({ status: workChapterEntity.status });
+
+    return chapter;
+  }
+
+  @HandleErrors('WORK_CHAPTERS_REPOSITORY_MARK_AS_REJECTED_ERROR')
+  async markAsRejected(chapterId: string, workId: string, problems: string[]) {
+    const [chapter] = await this.db
+      .update(workChapterEntity)
+      .set({
+        status: WorkStatus.REJECTED,
+        problems,
+        publicationAttemptsRemaining: 0,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(workChapterEntity.id, chapterId),
+          eq(workChapterEntity.workId, workId),
+        ),
+      )
+      .returning({ status: workChapterEntity.status });
 
     return chapter;
   }

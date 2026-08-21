@@ -53,6 +53,24 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Falló WorkChaptersRepository.deleteAndReorder',
   },
+  WORK_CHAPTERS_REPOSITORY_MARK_AS_PUBLISHED_ERROR: {
+    code: 'CHAP-0016',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorkChaptersRepository.markAsPublished',
+  },
+  WORK_CHAPTERS_REPOSITORY_MARK_AS_REQUIRES_REVIEW_ERROR: {
+    code: 'CHAP-0021',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorkChaptersRepository.markAsRequiresReview',
+  },
+  WORK_CHAPTERS_REPOSITORY_MARK_AS_REJECTED_ERROR: {
+    code: 'CHAP-0022',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorkChaptersRepository.markAsRejected',
+  },
   CHAPTER_WORK_NOT_FOUND: {
     code: 'CHAP-0004',
     status: 404,
@@ -94,5 +112,31 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     message: 'No se pudo eliminar el contenido del capítulo.',
     internalMessage:
       'Falló la eliminación del HTML del capítulo en el almacenamiento privado',
+  },
+  CHAPTER_ALREADY_PUBLISHED: {
+    code: 'CHAP-0017',
+    status: 409,
+    message: 'Este capítulo ya fue publicado.',
+    internalMessage: 'Se intentó publicar un capítulo con status published',
+  },
+  CHAPTER_HAS_NOT_MANUSCRIPT_FOR_PUBLISH: {
+    code: 'CHAP-0018',
+    status: 409,
+    message: 'Este capítulo no tiene manuscrito. No se puede publicar.',
+    internalMessage: 'Se intentó publicar un capítulo sin manuscrito',
+  },
+  CHAPTER_IS_TOO_SHORT: {
+    code: 'CHAP-0019',
+    status: 409,
+    message: 'Este capítulo es demasiado corto.',
+    internalMessage:
+      'Se intentó publicar un capítulo con menos de 300 caracteres.',
+  },
+  CHAPTER_NOT_MORE_PUBLISH_ATTEMPTS: {
+    code: 'CHAP-0023',
+    status: 409,
+    message:
+      'Este capítulo ha sido rechazado por políticas de Letramía y no podrá ser publicado.',
+    internalMessage: 'Se excedió el límite de reintentos del capítulo',
   },
 } as const;

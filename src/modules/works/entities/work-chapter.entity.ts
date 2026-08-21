@@ -4,6 +4,7 @@ import {
   varchar,
   integer,
   timestamp,
+  text,
 } from 'drizzle-orm/pg-core';
 import { WorkStatus } from '../types/work-status.enum';
 import { workEntity, workStatusEnum } from './work.entity';
@@ -20,6 +21,10 @@ export const workChapterEntity = pgTable('work_chapters', {
   sequence: integer('sequence').notNull(),
   // Los capítulos nacen como borrador y se publican de forma independiente.
   status: workStatusEnum('status').notNull().default(WorkStatus.DRAFT),
+  problems: text('problems').array().default(null),
+  publicationAttemptsRemaining: integer('publication_attempts_remaining')
+    .notNull()
+    .default(4),
   publishedAt: timestamp('published_at').default(null),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
