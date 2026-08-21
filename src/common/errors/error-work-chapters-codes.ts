@@ -71,6 +71,12 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Falló WorkChaptersRepository.markAsRejected',
   },
+  WORK_CHAPTERS_REPOSITORY_HAS_UNPUBLISHED_BEFORE_ERROR: {
+    code: 'CHAP-0024',
+    status: 500,
+    message: 'Error interno del servidor.',
+    internalMessage: 'Falló WorkChaptersRepository.hasUnpublishedBefore',
+  },
   CHAPTER_WORK_NOT_FOUND: {
     code: 'CHAP-0004',
     status: 404,
@@ -138,5 +144,12 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     message:
       'Este capítulo ha sido rechazado por políticas de Letramía y no podrá ser publicado.',
     internalMessage: 'Se excedió el límite de reintentos del capítulo',
+  },
+  CHAPTER_MUST_BE_PUBLISHED_IN_ORDER: {
+    code: 'CHAP-0025',
+    status: 409,
+    message: 'Debes publicar los capítulos anteriores antes de publicar este.',
+    internalMessage:
+      'Se intentó publicar un capítulo con capítulos anteriores sin publicar',
   },
 } as const;

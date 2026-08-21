@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DATABASE_PROVIDER } from '@/common/constants';
 import { HandleErrors } from '@/common/decorators/handle-errors.decorator';
@@ -19,6 +19,7 @@ export class WorkChaptersRepository {
     const [work] = await this.db
       .select({
         id: workEntity.id,
+        status: workEntity.status,
         workGenreId: workEntity.workGenreId,
         supportsChapters: workGenreEntity.supportsChapters,
       })
@@ -61,6 +62,7 @@ export class WorkChaptersRepository {
     const [chapter] = await this.db
       .select({
         id: workChapterEntity.id,
+        sequence: workChapterEntity.sequence,
         status: workChapterEntity.status,
         publicationAttemptsRemaining:
           workChapterEntity.publicationAttemptsRemaining,
@@ -75,6 +77,23 @@ export class WorkChaptersRepository {
       .limit(1);
 
     return chapter;
+  }
+
+  @HandleErrors('WORK_CHAPTERS_REPOSITORY_HAS_UNPUBLISHED_BEFORE_ERROR')
+  async hasUnpublishedBefore(workId: string, sequence: number) {
+    const [chapter] = await this.db
+      .select({ id: workChapterEntity.id })
+      .from(workChapterEntity)
+      .where(
+        and(
+          eq(workChapterEntity.workId, workId),
+          sql`${workChapterEntity.sequence} < ${sequence}`,
+          ne(workChapterEntity.status, WorkStatus.PUBLISHED),
+        ),
+      )
+      .limit(1);
+
+    return Boolean(chapter);
   }
 
   @HandleErrors('WORK_CHAPTERS_REPOSITORY_MARK_AS_PUBLISHED_ERROR')

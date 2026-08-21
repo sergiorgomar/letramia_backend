@@ -4,6 +4,7 @@ import { AppException } from '@/common/exceptions/app.exception';
 import { SupabaseStorageProvider } from '@/infrastructure/supabase/supabase-storage.provider';
 import { ContentSecurityUtils } from '@/common/utils/content-security.utils';
 import { WorkChaptersRepository } from '../repositories/work-chapters.repository';
+import { WorksRepository } from '../repositories/works.repository';
 import { slugify } from '../utils/slugify';
 import { WorkStatus } from '../types/work-status.enum';
 
@@ -11,6 +12,7 @@ import { WorkStatus } from '../types/work-status.enum';
 export class WorkChaptersService {
   constructor(
     private readonly workChaptersRepository: WorkChaptersRepository,
+    private readonly worksRepository: WorksRepository,
     @Inject(PRIVATE_STORAGE)
     private readonly privateStorageService: SupabaseStorageProvider,
   ) {}
@@ -173,6 +175,20 @@ export class WorkChaptersService {
       });
     }
 
+    // Se intenta publicar una obra que no es el orden adecuado
+    const hasUnpublishedChapterBefore =
+      await this.workChaptersRepository.hasUnpublishedBefore(
+        workId,
+        chapter.sequence,
+      );
+    if (hasUnpublishedChapterBefore) {
+      throw new AppException('CHAPTER_MUST_BE_PUBLISHED_IN_ORDER', {
+        workId,
+        chapterId,
+        sequence: chapter.sequence,
+      });
+    }
+
     const manuscript = await this.privateStorageService.downloadText(
       `works/${workId}/chapters/${chapterId}.html`,
     );
@@ -206,7 +222,17 @@ export class WorkChaptersService {
       );
     }
 
-    return this.workChaptersRepository.markAsPublished(chapterId, workId);
+    const publishedChapter = await this.workChaptersRepository.markAsPublished(
+      chapterId,
+      workId,
+    );
+
+    //🔥 worksRepository is of this domain??
+    if (work.status === WorkStatus.DRAFT) {
+      await this.worksRepository.markWorkAsPublished(workId, userId);
+    }
+
+    return publishedChapter;
   }
 
   async delete(workId: string, chapterId: string, userId: string) {
