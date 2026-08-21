@@ -47,14 +47,19 @@ export class WorkChaptersRepository {
   }
 
   @HandleErrors('WORK_CHAPTERS_REPOSITORY_FIND_ALL_IDS_BY_WORK_ID_ERROR')
-  async findAllIdsByWorkId(workId: string) {
+  async findAllActiveChaptersByWorkId(workId: string) {
     return this.db
       .select({
         id: workChapterEntity.id,
         status: workChapterEntity.status,
       })
       .from(workChapterEntity)
-      .where(eq(workChapterEntity.workId, workId))
+      .where(
+        and(
+          eq(workChapterEntity.workId, workId),
+          ne(workChapterEntity.status, WorkStatus.REJECTED),
+        ),
+      )
       .orderBy(asc(workChapterEntity.sequence));
   }
 

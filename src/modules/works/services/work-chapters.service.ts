@@ -75,7 +75,7 @@ export class WorkChaptersService {
     }
 
     const chapters =
-      await this.workChaptersRepository.findAllIdsByWorkId(workId);
+      await this.workChaptersRepository.findAllActiveChaptersByWorkId(workId);
     const currentChapterIds = new Set(chapters.map((chapter) => chapter.id));
     const requestedChapterIds = new Set(chapterIds);
     const isExactOrder =
