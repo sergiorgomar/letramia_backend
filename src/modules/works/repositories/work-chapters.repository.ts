@@ -51,6 +51,7 @@ export class WorkChaptersRepository {
     return this.db
       .select({
         id: workChapterEntity.id,
+        status: workChapterEntity.status,
       })
       .from(workChapterEntity)
       .where(eq(workChapterEntity.workId, workId))

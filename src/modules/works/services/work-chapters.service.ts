@@ -91,6 +91,17 @@ export class WorkChaptersService {
       });
     }
 
+    const movedPublishedChapter = chapters.some(
+      (chapter, index) =>
+        chapter.status === WorkStatus.PUBLISHED &&
+        chapterIds[index] !== chapter.id,
+    );
+    if (movedPublishedChapter) {
+      throw new AppException('CHAPTER_PUBLISHED_POSITION_CANNOT_CHANGE', {
+        workId,
+      });
+    }
+
     await this.workChaptersRepository.updateOrder(chapterIds);
   }
 

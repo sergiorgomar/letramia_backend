@@ -152,4 +152,11 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
     internalMessage:
       'Se intentó publicar un capítulo con capítulos anteriores sin publicar',
   },
+  CHAPTER_PUBLISHED_POSITION_CANNOT_CHANGE: {
+    code: 'CHAP-0026',
+    status: 409,
+    message: 'No puedes cambiar la posición de un capítulo publicado.',
+    internalMessage:
+      'Se intentó reordenar una obra cambiando la posición de un capítulo publicado',
+  },
 } as const;
