@@ -103,7 +103,7 @@ export class WorkChaptersRepository {
       .set({
         status: WorkStatus.PUBLISHED,
         problems: null,
-        publicationAttemptsRemaining: 3,
+        publicationAttemptsRemaining: 4,
         publishedAt: new Date(),
         updatedAt: new Date(),
       })

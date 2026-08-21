@@ -342,7 +342,7 @@ export class WorksRepository {
       .set({
         status: WorkStatus.PUBLISHED,
         problems: null,
-        publicationAttemptsRemaining: 3,
+        publicationAttemptsRemaining: 4,
         updatedAt: new Date(),
         publishedAt: new Date(),
       })
