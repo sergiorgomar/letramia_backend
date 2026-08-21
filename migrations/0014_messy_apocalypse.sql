@@ -1,0 +1,1 @@
+ALTER TABLE "works" ADD COLUMN "rejected_at" timestamp DEFAULT null;

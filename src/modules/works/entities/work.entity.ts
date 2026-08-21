@@ -53,6 +53,7 @@ export const workEntity = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
     publishedAt: timestamp('published_at').default(null),
+    rejectedAt: timestamp('rejected_at').default(null),
   },
   // 🔥 TODO: reivsar esta implementación, estudiar los indices
   // (table) => ({
