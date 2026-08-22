@@ -258,7 +258,9 @@ export class WorkChaptersService {
       throw new AppException('CHAPTER_IS_TOO_SHORT', { workId, chapterId });
     }
 
-    const analysis = ContentSecurityUtils.analyzeSpam(plainText);
+    const analysis = ContentSecurityUtils.analyzeSpam(manuscript, {
+      allowLinks: true,
+    });
     if (analysis.isSpam) {
       if (chapter.publicationAttemptsRemaining === 1) {
         const rejectedChapter =

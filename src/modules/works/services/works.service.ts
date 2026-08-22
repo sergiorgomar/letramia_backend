@@ -214,7 +214,9 @@ export class WorksService {
           });
         }
 
-        const analysis = ContentSecurityUtils.analyzeSpam(planed);
+        const analysis = ContentSecurityUtils.analyzeSpam(manuscript, {
+          allowLinks: true,
+        });
         if (analysis.isSpam) {
           if (work.publicationAttemptsRemaining == 1) {
             this.worksRepository.markWorkAsRejected(

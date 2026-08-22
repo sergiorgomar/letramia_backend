@@ -172,6 +172,13 @@ export class ContentSecurityUtils {
           continue;
         }
 
+        if (tagName === 'img' && ['width', 'height'].includes(attribute)) {
+          const dimension = this.sanitizeImageDimension(value);
+          if (dimension) $(element).attr(attribute, dimension);
+          else $(element).removeAttr(name);
+          continue;
+        }
+
         if (tagName !== 'a' || !['href', 'target', 'rel'].includes(attribute)) {
           $(element).removeAttr(name);
         }
@@ -412,6 +419,15 @@ export class ContentSecurityUtils {
     } catch {
       return false;
     }
+  }
+
+  private static sanitizeImageDimension(value: string): string | null {
+    if (!/^\d{1,4}$/.test(value)) return null;
+
+    const dimension = Number(value);
+    if (dimension < 80 || dimension > 1600) return null;
+
+    return String(dimension);
   }
 
   private static isSafeImageUrl(url: string, allowedPrefix?: string): boolean {
