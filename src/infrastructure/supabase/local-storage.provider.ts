@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize, resolve } from 'node:path';
 import { ConfigService } from '@nestjs/config';
 
@@ -64,6 +64,23 @@ export class LocalStorageProvider {
         }
       }),
     );
+  }
+
+  async list(path: string): Promise<string[]> {
+    try {
+      const entries = await readdir(this.resolvePath(path), {
+        withFileTypes: true,
+      });
+
+      return entries
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.webp'))
+        .map((entry) => `${path.replace(/\/$/, '')}/${entry.name}`)
+        .sort()
+        .reverse();
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+      throw error;
+    }
   }
 
   getPublicUrl(path: string): string {

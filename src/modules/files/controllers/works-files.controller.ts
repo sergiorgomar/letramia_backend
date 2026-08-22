@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   ParseUUIDPipe,
   Post,
@@ -16,6 +17,7 @@ import { WorksFilesService } from '../services/works-files.service';
 import { UploadWorkCoverDTO } from '../dtos/output/upload-work-cover.dto';
 import { UploadWorkContentDTO } from '../dtos/output/upload-work-content.dto';
 import { UploadWorkContentImageDTO } from '../dtos/output/upload-work-content-image.dto';
+import { ListWorkContentImagesDTO } from '../dtos/output/list-work-content-images.dto';
 import { GetWorkManuscriptDTO } from '../dtos/input/get-work-manuscript.dto';
 import { isUUID } from 'class-validator';
 import { AppException } from '@/common/exceptions/app.exception';
@@ -75,6 +77,15 @@ export class WorksFilesController {
     @CurrentUser() user: RequestUser,
   ) {
     return await this.worksFilesService.uploadContentImage(id, user.id, file);
+  }
+
+  @Get(':id/images')
+  @ResponseDto(ListWorkContentImagesDTO, 'Imágenes obtenidas con éxito')
+  async listContentImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return await this.worksFilesService.listContentImages(id, user.id);
   }
 
   // controller para obtener el contenido de una obra

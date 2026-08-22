@@ -66,6 +66,25 @@ export class SupabaseStorageProvider {
     }
   }
 
+  async list(path: string): Promise<string[]> {
+    const { data, error } = await this.supabaseClient.storage
+      .from(this.bucket)
+      .list(path, {
+        limit: 100,
+        sortBy: { column: 'created_at', order: 'desc' },
+      });
+
+    if (error) {
+      throw new Error(
+        `No se pudieron listar los archivos de Supabase Storage: ${error.message}`,
+      );
+    }
+
+    return data
+      .filter((object) => object.name.endsWith('.webp'))
+      .map((object) => `${path.replace(/\/$/, '')}/${object.name}`);
+  }
+
   getPublicUrl(path: string): string {
     const {
       data: { publicUrl },

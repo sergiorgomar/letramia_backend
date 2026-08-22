@@ -206,6 +206,26 @@ export class WorksFilesService {
     return { id, url: this.publicStorageService.getPublicUrl(path) };
   }
 
+  async listContentImages(
+    workId: string,
+    userId: string,
+  ): Promise<{ images: { url: string }[] }> {
+    const work = await this.filesRepository.findWorkByIdAndUserId(
+      workId,
+      userId,
+    );
+    if (!work) throw new AppException('WORK_NOT_FOUND', { workId });
+
+    const directory = `works/${workId}/content-images`;
+    const paths = await this.publicStorageService.list(directory);
+
+    return {
+      images: paths.map((path) => ({
+        url: this.publicStorageService.getPublicUrl(path),
+      })),
+    };
+  }
+
   async getManuscript(workId: string, userId: string, chapterId) {
     const work = await this.filesRepository.findWorkContentByIdAndUserId(
       workId,
