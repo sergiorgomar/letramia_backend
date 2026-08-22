@@ -13,6 +13,8 @@ export interface ContentSecurityOptions {
   allowedImageUrlPrefix?: string;
   allowYoutube?: boolean;
   allowTiktok?: boolean;
+  allowInstagram?: boolean;
+  allowFacebook?: boolean;
 }
 
 export interface SanitizedHtmlStats {
@@ -53,6 +55,8 @@ export class ContentSecurityUtils {
     'img',
     'lite-youtube',
     'lite-tiktok',
+    'lite-instagram',
+    'lite-facebook',
   ]);
 
   private static readonly DROP_WITH_CONTENT = new Set([
@@ -128,7 +132,9 @@ export class ContentSecurityUtils {
         (tagName === 'a' && !options.allowLinks) ||
         (tagName === 'img' && !options.allowImages) ||
         (tagName === 'lite-youtube' && !options.allowYoutube) ||
-        (tagName === 'lite-tiktok' && !options.allowTiktok)
+        (tagName === 'lite-tiktok' && !options.allowTiktok) ||
+        (tagName === 'lite-instagram' && !options.allowInstagram) ||
+        (tagName === 'lite-facebook' && !options.allowFacebook)
       ) {
         $(htmlElement).replaceWith($(htmlElement).contents());
         return;
@@ -207,6 +213,34 @@ export class ContentSecurityUtils {
           continue;
         }
 
+        if (
+          ['lite-instagram', 'lite-facebook'].includes(tagName) &&
+          attribute === 'url'
+        ) {
+          const allowedHost =
+            tagName === 'lite-instagram'
+              ? ['instagram.com', 'www.instagram.com']
+              : ['facebook.com', 'www.facebook.com', 'm.facebook.com'];
+          const isSafeEmbedUrl =
+            tagName === 'lite-facebook'
+              ? this.isSafeFacebookEmbedUrl(value, allowedHost)
+              : this.isSafeUrlFromHosts(value, allowedHost);
+          if (!isSafeEmbedUrl) {
+            $(element).remove();
+            return;
+          }
+          $(element).attr('url', value);
+          continue;
+        }
+
+        if (
+          ['lite-instagram', 'lite-facebook'].includes(tagName) &&
+          attribute === 'title'
+        ) {
+          $(element).attr('title', value.slice(0, 200));
+          continue;
+        }
+
         if (tagName === 'img' && ['width', 'height'].includes(attribute)) {
           const dimension = this.sanitizeImageDimension(value);
           if (dimension) $(element).attr(attribute, dimension);
@@ -244,6 +278,19 @@ export class ContentSecurityUtils {
         }
         if (!$(element).attr('title')) {
           $(element).attr('title', 'Video de TikTok');
+        }
+      }
+
+      if (['lite-instagram', 'lite-facebook'].includes(tagName)) {
+        if (!$(element).attr('url')) {
+          $(element).remove();
+          return;
+        }
+        if (!$(element).attr('title')) {
+          $(element).attr(
+            'title',
+            tagName === 'lite-instagram' ? 'Publicación de Instagram' : 'Publicación de Facebook',
+          );
         }
       }
     });
@@ -471,6 +518,31 @@ export class ContentSecurityUtils {
     try {
       const parsed = new URL(url, 'https://letramia.local');
       return ['http:', 'https:', 'mailto:'].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  }
+
+  private static isSafeUrlFromHosts(url: string, hosts: string[]): boolean {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'https:' && hosts.includes(parsed.hostname);
+    } catch {
+      return false;
+    }
+  }
+
+  private static isSafeFacebookEmbedUrl(
+    url: string,
+    hosts: string[],
+  ): boolean {
+    try {
+      const parsed = new URL(url);
+      return (
+        parsed.protocol === 'https:' &&
+        hosts.includes(parsed.hostname) &&
+        !/^\/share(?:\/|$)/.test(parsed.pathname)
+      );
     } catch {
       return false;
     }

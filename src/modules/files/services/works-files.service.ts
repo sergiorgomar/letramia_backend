@@ -115,6 +115,8 @@ export class WorksFilesService {
         allowImages: true,
         allowYoutube: true,
         allowTiktok: true,
+        allowInstagram: true,
+        allowFacebook: true,
         allowedImageUrlPrefix: this.publicStorageService.getPublicUrl(
           `works/${workId}/content-images/`,
         ),
