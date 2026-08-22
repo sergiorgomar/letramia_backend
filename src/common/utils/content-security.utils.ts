@@ -12,6 +12,7 @@ export interface ContentSecurityOptions {
   allowImages?: boolean;
   allowedImageUrlPrefix?: string;
   allowYoutube?: boolean;
+  allowTiktok?: boolean;
 }
 
 export interface SanitizedHtmlStats {
@@ -51,6 +52,7 @@ export class ContentSecurityUtils {
     'a',
     'img',
     'lite-youtube',
+    'lite-tiktok',
   ]);
 
   private static readonly DROP_WITH_CONTENT = new Set([
@@ -125,7 +127,8 @@ export class ContentSecurityUtils {
         !this.ALLOWED_TAGS.has(tagName) ||
         (tagName === 'a' && !options.allowLinks) ||
         (tagName === 'img' && !options.allowImages) ||
-        (tagName === 'lite-youtube' && !options.allowYoutube)
+        (tagName === 'lite-youtube' && !options.allowYoutube) ||
+        (tagName === 'lite-tiktok' && !options.allowTiktok)
       ) {
         $(htmlElement).replaceWith($(htmlElement).contents());
         return;
@@ -190,6 +193,20 @@ export class ContentSecurityUtils {
           continue;
         }
 
+        if (tagName === 'lite-tiktok' && attribute === 'videoid') {
+          if (!this.isValidTiktokVideoId(value)) {
+            $(element).remove();
+            return;
+          }
+          $(element).attr('videoid', value);
+          continue;
+        }
+
+        if (tagName === 'lite-tiktok' && attribute === 'title') {
+          $(element).attr('title', value.slice(0, 200));
+          continue;
+        }
+
         if (tagName === 'img' && ['width', 'height'].includes(attribute)) {
           const dimension = this.sanitizeImageDimension(value);
           if (dimension) $(element).attr(attribute, dimension);
@@ -217,6 +234,16 @@ export class ContentSecurityUtils {
         }
         if (!$(element).attr('title')) {
           $(element).attr('title', 'Video de YouTube');
+        }
+      }
+
+      if (tagName === 'lite-tiktok') {
+        if (!$(element).attr('videoid')) {
+          $(element).remove();
+          return;
+        }
+        if (!$(element).attr('title')) {
+          $(element).attr('title', 'Video de TikTok');
         }
       }
     });
@@ -474,5 +501,9 @@ export class ContentSecurityUtils {
 
   private static isValidYoutubeVideoId(videoId: string): boolean {
     return /^[\w-]{11}$/.test(videoId);
+  }
+
+  private static isValidTiktokVideoId(videoId: string): boolean {
+    return /^\d{15,25}$/.test(videoId);
   }
 }
