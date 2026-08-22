@@ -10,6 +10,7 @@ import { WorkResponseDto } from '../dtos/output/work-response.dto';
 import { PublishedWorkResponseDto } from '../dtos/output/published-work-response.dto';
 import { ListPublishedWorksDto } from '../dtos/output/list-published-works.dto';
 import { PublishedChapterContentResponseDto } from '../dtos/output/published-chapter-content-response.dto';
+import { SitemapResponseDTO } from '../dtos/output/sitemap-response.dto';
 
 @Public()
 @Controller('web')
@@ -21,6 +22,12 @@ export class WebController {
   @ResponseDto(PageDataDTO)
   getPageData(): Promise<PageDataDTO> {
     return this.webService.getPageData();
+  }
+
+  @Get('sitemap')
+  @ResponseDto(SitemapResponseDTO)
+  getSitemap(): Promise<SitemapResponseDTO> {
+    return this.webService.getSitemapData();
   }
 
   // controller para el detalle de una obra

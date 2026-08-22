@@ -25,6 +25,40 @@ export class WebService {
     private readonly privateStorageService: SupabaseStorageProvider,
   ) {}
 
+  async getSitemapData() {
+    const rows = await this.webRepository.findSitemapRows();
+    const works = new Map<
+      string,
+      { slug: string; chapters: { slug: string }[] }
+    >();
+    const themes = new Map<string, { slug: string; name: string }>();
+    const genres = new Map<string, { slug: string; name: string }>();
+
+    for (const row of rows) {
+      themes.set(row.themeSlug, {
+        slug: row.themeSlug,
+        name: row.themeName,
+      });
+      genres.set(row.genreSlug, {
+        slug: row.genreSlug,
+        name: row.genreName,
+      });
+
+      const work = works.get(row.workSlug) ?? {
+        slug: row.workSlug,
+        chapters: [],
+      };
+      if (row.chapterSlug) work.chapters.push({ slug: row.chapterSlug });
+      works.set(row.workSlug, work);
+    }
+
+    return {
+      themes: [...themes.values()],
+      genres: [...genres.values()],
+      works: [...works.values()],
+    };
+  }
+
   async getPageData(): Promise<PageData> {
     const cachedData =
       await this.cacheManager.get<PageData>(PAGE_DATA_CACHE_KEY);
@@ -85,19 +119,12 @@ export class WebService {
       throw new AppException('WORK_NOT_FOUND', { slug });
     }
 
-    // si la obra es un poema, hay que devolver el content
+    const { supportsChapters, ...workResponse } = work;
     let text: null | string = null;
-    //🔥 TODO:magic strings ta muy gacho esto aca que poema, almenos un enum pudiera ser
-    switch (work.genreSlug) {
-      //🔥 TODO: magic strings
-      // FALTA--- Otras obras, otros procesos, deben ir todas las obras que sean con manuscript
-      case 'poema':
-      case 'reseña':
-      case 'cuento':
-        text = await this.privateStorageService.downloadText(
-          `works/${work.id}/manuscript.html`,
-        );
-        break;
+    if (!supportsChapters) {
+      text = await this.privateStorageService.downloadText(
+        `works/${workResponse.id}/manuscript.html`,
+      );
     }
 
     //🔥 TODO: implement revalidate cache instead of ttls minutes
@@ -108,11 +135,11 @@ export class WebService {
     */
     await this.cacheManager.set(
       cacheKey,
-      { ...work, text },
+      { ...workResponse, text },
       PAGE_DATA_CACHE_TTL_MS,
     );
 
-    return { ...work, text };
+    return { ...workResponse, text };
   }
 
   async findByQuery({

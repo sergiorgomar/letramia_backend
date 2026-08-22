@@ -99,6 +99,37 @@ export class WebRepository {
       .from(workGenreEntity);
   }
 
+  //🔥 todo: IMRPVOE, esto no escala, me va tirar la db
+  @HandleErrors('DATABASE_ERROR')
+  async findSitemapRows() {
+    return this.db
+      .select({
+        workSlug: workEntity.slug,
+        chapterSlug: workChapterEntity.slug,
+        themeSlug: workThemeEntity.slug,
+        themeName: workThemeEntity.name,
+        genreSlug: workGenreEntity.slug,
+        genreName: workGenreEntity.name,
+      })
+      .from(workEntity)
+      .innerJoin(
+        workThemeEntity,
+        eq(workThemeEntity.id, workEntity.workThemeId),
+      )
+      .innerJoin(
+        workGenreEntity,
+        eq(workGenreEntity.id, workEntity.workGenreId),
+      )
+      .leftJoin(
+        workChapterEntity,
+        and(
+          eq(workChapterEntity.workId, workEntity.id),
+          eq(workChapterEntity.status, WorkStatus.PUBLISHED),
+        ),
+      )
+      .where(eq(workEntity.status, WorkStatus.PUBLISHED));
+  }
+
   @HandleErrors('DATABASE_ERROR')
   async getLastWorks() {
     const lastWorks = await this.db
@@ -157,6 +188,7 @@ export class WebRepository {
         themeSlug: workThemeEntity.slug,
         genreName: workGenreEntity.name,
         genreSlug: workGenreEntity.slug,
+        supportsChapters: workGenreEntity.supportsChapters,
         authorName: userEntity.name,
       })
       .from(workEntity)

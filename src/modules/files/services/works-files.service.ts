@@ -153,46 +153,36 @@ export class WorksFilesService {
 
     const sanitizedBuffer = Buffer.from(html, 'utf8');
 
-    switch (work.genreSlug) {
-      //🔥 TODO: magic strings
-      case 'poema':
-      case 'reseña':
-      case 'cuento':
-        await this.privateStorageService.upload(
-          `works/${workId}/manuscript.html`,
-          sanitizedBuffer,
-          'text/html',
-        );
-        await this.filesRepository.updateWorkStats(
-          workId,
-          wordCount,
-          characterCount,
-        );
-        break;
-      case 'novela':
-      case 'libro':
-        if (!chapterId || !work.chapterId) {
-          throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', {
-            chapterId,
-            more: `Missing or invalid chapterId for ${work.genreSlug}`,
-          });
-        }
-        await this.privateStorageService.upload(
-          `works/${work.id}/chapters/${work.chapterId}.html`,
-          sanitizedBuffer,
-          'text/html',
-        );
-        await this.filesRepository.updateChapterStats(
-          chapterId,
-          wordCount,
-          characterCount,
-        );
-        break;
-      default:
-        throw new AppException('WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET', {
-          genreSlug: work.genreSlug,
-        });
+    if (!work.supportsChapters) {
+      await this.privateStorageService.upload(
+        `works/${workId}/manuscript.html`,
+        sanitizedBuffer,
+        'text/html',
+      );
+      await this.filesRepository.updateWorkStats(
+        workId,
+        wordCount,
+        characterCount,
+      );
+      return;
     }
+
+    if (!chapterId || !work.chapterId) {
+      throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', {
+        chapterId,
+        more: 'Missing or invalid chapterId for a work with chapters',
+      });
+    }
+    await this.privateStorageService.upload(
+      `works/${work.id}/chapters/${work.chapterId}.html`,
+      sanitizedBuffer,
+      'text/html',
+    );
+    await this.filesRepository.updateChapterStats(
+      chapterId,
+      wordCount,
+      characterCount,
+    );
   }
 
   async uploadContentImage(
@@ -269,33 +259,20 @@ export class WorksFilesService {
     if (!work) {
       throw new AppException('WORK_NOT_FOUND', { workId });
     }
-    let manuscript = '';
-    switch (work.genreSlug) {
-      case 'poema':
-      case 'reseña':
-      case 'cuento':
-        manuscript = await this.privateStorageService.downloadText(
-          `works/${workId}/manuscript.html`,
-        );
-        break;
-      case 'novela':
-      case 'libro':
-        if (!chapterId || !work.chapterId) {
-          throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', {
-            chapterId,
-            more: `Missing or invalid chapterId for ${work.genreSlug}`,
-          });
-        }
-        manuscript = await this.privateStorageService.downloadText(
-          `works/${work.id}/chapters/${work.chapterId}.html`,
-        );
-        break;
-      default:
-        throw new AppException('WORK_CONTENT_UPLOAD_NOT_IMPLEMENTED_YET', {
-          genreSlug: work.genreSlug,
-        });
+    if (!work.supportsChapters) {
+      return this.privateStorageService.downloadText(
+        `works/${workId}/manuscript.html`,
+      );
     }
 
-    return manuscript;
+    if (!chapterId || !work.chapterId) {
+      throw new AppException('WORK_CONTENT_INFO_NOT_CORRECT', {
+        chapterId,
+        more: 'Missing or invalid chapterId for a work with chapters',
+      });
+    }
+    return this.privateStorageService.downloadText(
+      `works/${work.id}/chapters/${work.chapterId}.html`,
+    );
   }
 }

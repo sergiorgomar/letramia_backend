@@ -36,6 +36,7 @@ export class FilesRepository {
         id: workEntity.id,
         workStatus: workEntity.status,
         genreSlug: workGenreEntity.slug,
+        supportsChapters: workGenreEntity.supportsChapters,
         chapterId: workChapterEntity.id,
         chapterStatus: workChapterEntity.status,
       })

@@ -293,6 +293,7 @@ export class WorksRepository {
         status: workEntity.status,
         publicationAttemptsRemaining: workEntity.publicationAttemptsRemaining,
         genreSlug: workGenreEntity.slug,
+        supportsChapters: workGenreEntity.supportsChapters,
       })
       .from(workEntity)
       .innerJoin(

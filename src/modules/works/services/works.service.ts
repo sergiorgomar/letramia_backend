@@ -195,75 +195,60 @@ export class WorksService {
       });
     }
 
-    //validar que tenga contenido
-    switch (work.genreSlug) {
-      case 'poema':
-      case 'reseña':
-      case 'cuento': {
-        const manuscript = await this.privateStorageService.downloadText(
-          `works/${workId}/manuscript.html`,
-        );
-
-        if (!manuscript || manuscript === null || manuscript === '') {
-          throw new AppException('WORK_HAS_NOT_MANUSCRIPT_FOR_PUBLISH', {
-            workId,
-          });
-        }
-
-        /**
-         * 🔥 DARLE UNA VUELTA A ESTO DE LAS SANITIZADAS, DEL SPAM
-         * ESTA TODO MUY REVUELTO NO SE ENTIENDE BIEN
-         */
-        const wordCount = ContentSecurityUtils.countWords(manuscript);
-
-        if (wordCount < 600) {
-          throw new AppException('WORK_IS_TOO_SHORT', {
-            workId,
-          });
-        }
-
-        const analysis = ContentSecurityUtils.analyzeSpam(manuscript, {
-          allowLinks: true,
-        });
-        if (analysis.isSpam) {
-          if (work.publicationAttemptsRemaining == 1) {
-            this.worksRepository.markWorkAsRejected(
-              workId,
-              userId,
-              analysis.reasons,
-            );
-            return { status: WorkStatus.REJECTED };
-          } else {
-            this.worksRepository.markWorkAsRequiresReview(
-              workId,
-              userId,
-              analysis.reasons,
-            );
-            return { status: WorkStatus.REQUIRES_REVIEW };
-          }
-        }
-
-        //validar plagio,
-
-        //Publicar obra
-        this.worksRepository.markWorkAsPublished(workId, userId);
-        return { status: WorkStatus.PUBLISHED };
-      }
-      case 'novela':
-      case 'libro': {
-        // si es novela o libro no se puede publicar por este medio,
-        // esos hay que publicar cada capitulo
-        throw new AppException('WORK_NOT_ADMITED_FOR_PUBLISH', {
-          workId,
-          genreSlug: work.genreSlug,
-        });
-      }
-      default: {
-        throw new AppException('WORK_NOT_ADMITED_FOR_PUBLISH', {
-          workId,
-          genreSlug: work.genreSlug,
-        });
-      }
+    if (work.supportsChapters) {
+      throw new AppException('WORK_NOT_ADMITED_FOR_PUBLISH', {
+        workId,
+        genreSlug: work.genreSlug,
+      });
     }
+
+    const manuscript = await this.privateStorageService.downloadText(
+      `works/${workId}/manuscript.html`,
+    );
+
+    if (!manuscript || manuscript === null || manuscript === '') {
+      throw new AppException('WORK_HAS_NOT_MANUSCRIPT_FOR_PUBLISH', {
+        workId,
+      });
+    }
+
+    /**
+     * 🔥 DARLE UNA VUELTA A ESTO DE LAS SANITIZADAS, DEL SPAM
+     * ESTA TODO MUY REVUELTO NO SE ENTIENDE BIEN
+     */
+    const wordCount = ContentSecurityUtils.countWords(manuscript);
+
+    if (wordCount < 600) {
+      throw new AppException('WORK_IS_TOO_SHORT', {
+        workId,
+      });
+    }
+
+    const analysis = ContentSecurityUtils.analyzeSpam(manuscript, {
+      allowLinks: true,
+    });
+    if (analysis.isSpam) {
+      if (work.publicationAttemptsRemaining == 1) {
+        this.worksRepository.markWorkAsRejected(
+          workId,
+          userId,
+          analysis.reasons,
+        );
+        return { status: WorkStatus.REJECTED };
+      }
+
+      this.worksRepository.markWorkAsRequiresReview(
+        workId,
+        userId,
+        analysis.reasons,
+      );
+      return { status: WorkStatus.REQUIRES_REVIEW };
+    }
+
+    //🔥validar plagio,
+    //🔥IA MODEL
+
+    this.worksRepository.markWorkAsPublished(workId, userId);
+    return { status: WorkStatus.PUBLISHED };
   }
 }
