@@ -75,6 +75,14 @@ export class FilesRepository {
   }
 
   @HandleErrors('DATABASE_ERROR')
+  async updateWorkCoverTimestamp(workId: string) {
+    await this.db
+      .update(workEntity)
+      .set({ coverUpdatedAt: new Date() })
+      .where(eq(workEntity.id, workId));
+  }
+
+  @HandleErrors('DATABASE_ERROR')
   async updateChapterStats(
     chapterEntity: string,
     wordCount: number,

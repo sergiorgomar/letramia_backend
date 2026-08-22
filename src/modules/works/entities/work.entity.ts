@@ -52,6 +52,7 @@ export const workEntity = pgTable(
 
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    coverUpdatedAt: timestamp('cover_updated_at').notNull().defaultNow(),
     publishedAt: timestamp('published_at').default(null),
     rejectedAt: timestamp('rejected_at').default(null),
   },

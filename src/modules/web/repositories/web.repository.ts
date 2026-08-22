@@ -25,12 +25,22 @@ export class WebRepository {
       this.config.getOrThrow<string>('PUBLIC_BUCKET_URL');
   }
 
+  //🔥 todo: NO ME GUSYA ESTO AQUI, REVISAR
+  private getCoverUrl(
+    workId: string,
+    variant: 'thumb' | 'small',
+    coverUpdatedAt: Date,
+  ): string {
+    return `${this.PUBLIC_BUCKET_URL}/works/${workId}/cover/${variant}.webp?v=${coverUpdatedAt.getTime()}`;
+  }
+
   @HandleErrors('DATABASE_ERROR')
   // 🔥 TODO: eliminar este query cuando se retire sponsorBanner del contrato de /web/page-data.
   async getSponsorBannerData() {
     const works = await this.db
       .select({
         id: workEntity.id,
+        coverUpdatedAt: workEntity.coverUpdatedAt,
         workSlug: workEntity.slug,
         title: workEntity.title,
         publishedAt: workEntity.updatedAt, //🔥 TODO: works needs published at date
@@ -65,7 +75,7 @@ export class WebRepository {
       genreName: w.genreName,
       themeName: w.themeName,
       // 🔥 TODO: thumb.wepb -- magic string
-      imageUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
+      imageUrl: this.getCoverUrl(w.id, 'thumb', w.coverUpdatedAt),
     }));
   }
 
@@ -94,6 +104,7 @@ export class WebRepository {
     const lastWorks = await this.db
       .select({
         id: workEntity.id,
+        coverUpdatedAt: workEntity.coverUpdatedAt,
         workSlug: workEntity.slug,
         synopsis: workEntity.synopsis,
         title: workEntity.title,
@@ -124,7 +135,7 @@ export class WebRepository {
       title: w.title,
       synopsis: w.synopsis,
       // 🔥 TODO: thumb.wepb -- magic string
-      coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
+      coverUrl: this.getCoverUrl(w.id, 'thumb', w.coverUpdatedAt),
       genreName: w.genreName,
       themeName: w.themeName,
       authorName: w.authorName,
@@ -137,6 +148,7 @@ export class WebRepository {
     const [work] = await this.db
       .select({
         id: workEntity.id,
+        coverUpdatedAt: workEntity.coverUpdatedAt,
         title: workEntity.title,
         synopsis: workEntity.synopsis,
         //🔥 TODO: date of published is requiered
@@ -183,7 +195,7 @@ export class WebRepository {
     return {
       ...work,
       // 🔥 TODO: thumb.wepb -- magic string
-      coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/small.webp`,
+      coverUrl: this.getCoverUrl(work.id, 'small', work.coverUpdatedAt),
       chapterCount: chapters.length,
       chapters,
     };
@@ -230,6 +242,7 @@ export class WebRepository {
     const works = await this.db
       .select({
         id: workEntity.id,
+        coverUpdatedAt: workEntity.coverUpdatedAt,
         slug: workEntity.slug,
         title: workEntity.title,
         synopsis: workEntity.synopsis,
@@ -248,7 +261,7 @@ export class WebRepository {
     return works.map((w) => ({
       ...w,
       // 🔥 TODO: thumb.wepb -- magic string
-      thumbCoverUrl: `${this.PUBLIC_BUCKET_URL}/works/${w.id}/cover/thumb.webp`,
+      thumbCoverUrl: this.getCoverUrl(w.id, 'thumb', w.coverUpdatedAt),
     }));
   }
 

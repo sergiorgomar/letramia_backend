@@ -36,6 +36,15 @@ export class WorksRepository {
       this.config.getOrThrow<string>('PUBLIC_BUCKET_URL');
   }
 
+  //🔥 todo: NO ME GUSYA ESTO AQUI, REVISAR
+  private getCoverUrl(
+    workId: string,
+    variant: 'mini_thumb' | 'thumb',
+    coverUpdatedAt: Date,
+  ): string {
+    return `${this.PUBLIC_BUCKET_URL}/works/${workId}/cover/${variant}.webp?v=${coverUpdatedAt.getTime()}`;
+  }
+
   @HandleErrors('WORKS_REPOSITORY_FIND_ALL_BY_USER_ID_ERROR')
   async findAllByUserId(userId: string) {
     // throw new Error("Epa")
@@ -44,6 +53,7 @@ export class WorksRepository {
         id: workEntity.id,
         title: workEntity.title,
         status: workEntity.status,
+        coverUpdatedAt: workEntity.coverUpdatedAt,
 
         genreName: workGenreEntity.name,
         themeName: workThemeEntity.name,
@@ -58,7 +68,7 @@ export class WorksRepository {
     return works.map((work) => ({
       ...work,
       // 🔥 TODO: mini_thumb.webp -- magic string
-      coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/mini_thumb.webp`,
+      coverUrl: this.getCoverUrl(work.id, 'mini_thumb', work.coverUpdatedAt),
     }));
   }
 
@@ -71,6 +81,7 @@ export class WorksRepository {
         status: workEntity.status,
         synopsis: workEntity.synopsis,
         updatedAt: workEntity.updatedAt,
+        coverUpdatedAt: workEntity.coverUpdatedAt,
         publishedAt: workEntity.publishedAt,
         attemptsToPublish: workEntity.publicationAttemptsRemaining,
         problems: workEntity.problems,
@@ -123,7 +134,7 @@ export class WorksRepository {
       attemptsToPublish: work.attemptsToPublish,
       problems: work.problems ?? [],
       // 🔥 TODO: thumb.wepb -- magic string
-      coverUrl: `${this.PUBLIC_BUCKET_URL}/works/${work.id}/cover/thumb.webp`,
+      coverUrl: this.getCoverUrl(work.id, 'thumb', work.coverUpdatedAt),
       chapters: rows.flatMap((row) => {
         if (
           row.chapterId === null ||

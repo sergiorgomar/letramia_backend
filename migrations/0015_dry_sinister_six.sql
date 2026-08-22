@@ -1,0 +1,1 @@
+ALTER TABLE "works" ADD COLUMN "cover_updated_at" timestamp DEFAULT now() NOT NULL;

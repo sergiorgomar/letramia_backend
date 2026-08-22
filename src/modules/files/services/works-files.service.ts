@@ -68,6 +68,8 @@ export class WorksFilesService {
         );
       }),
     );
+
+    await this.filesRepository.updateWorkCoverTimestamp(work.id);
   }
 
   async uploadContent(
