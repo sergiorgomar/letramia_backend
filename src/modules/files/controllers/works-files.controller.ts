@@ -15,12 +15,14 @@ import { RequestUser } from '@/infrastructure/auth/types/request-user.types';
 import { WorksFilesService } from '../services/works-files.service';
 import { UploadWorkCoverDTO } from '../dtos/output/upload-work-cover.dto';
 import { UploadWorkContentDTO } from '../dtos/output/upload-work-content.dto';
+import { UploadWorkContentImageDTO } from '../dtos/output/upload-work-content-image.dto';
 import { GetWorkManuscriptDTO } from '../dtos/input/get-work-manuscript.dto';
 import { isUUID } from 'class-validator';
 import { AppException } from '@/common/exceptions/app.exception';
 
 const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024; // 5MiB
 const MAX_CONTENT_SIZE_BYTES = 5 * 1024 * 1024; // 5MiB
+const MAX_CONTENT_IMAGE_SIZE_BYTES = 5 * 524 * 1024; // 5MiB
 
 @Controller('files/works')
 export class WorksFilesController {
@@ -58,6 +60,21 @@ export class WorksFilesController {
     }
     await this.worksFilesService.uploadContent(id, user.id, chapterId, file);
     return { ok: true };
+  }
+
+  @Post(':id/image')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_CONTENT_IMAGE_SIZE_BYTES },
+    }),
+  )
+  @ResponseDto(UploadWorkContentImageDTO, 'Imagen subida con éxito')
+  async uploadContentImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return await this.worksFilesService.uploadContentImage(id, user.id, file);
   }
 
   // controller para obtener el contenido de una obra

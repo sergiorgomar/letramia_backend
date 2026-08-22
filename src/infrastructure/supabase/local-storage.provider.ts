@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize, resolve } from 'node:path';
+import { ConfigService } from '@nestjs/config';
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 type BucketType = 'public' | 'private';
@@ -10,10 +11,14 @@ export type SignedUrl = { url: string; expiresAt: Date };
 @Injectable()
 export class LocalStorageProvider {
   rootDirectory = join(process.cwd(), 'uploads');
-  baseUrl = process.env.APP_URL ?? 'http://localhost:3000';
+  publicBucketUrl = '';
 
-  constructor(private readonly bucketType: BucketType) {
+  constructor(
+    private readonly bucketType: BucketType,
+    private readonly config: ConfigService,
+  ) {
     this.rootDirectory = join(process.cwd(), 'uploads', this.bucketType);
+    this.publicBucketUrl = this.config.get<string>('PUBLIC_BUCKET_URL')!;
   }
 
   private resolvePath(objectPath: string): string {
@@ -63,7 +68,11 @@ export class LocalStorageProvider {
 
   getPublicUrl(path: string): string {
     const encodedPath = path.split('/').map(encodeURIComponent).join('/');
-    return `${this.baseUrl.replace(/\/$/, '')}/uploads/${encodedPath}`;
+    const publicBucketUrl = this.config.get<string>('PUBLIC_BUCKET_URL');
+    if (this.bucketType === 'public' && publicBucketUrl) {
+      return `${publicBucketUrl.replace(/\/$/, '')}/${encodedPath}`;
+    }
+    return `${this.publicBucketUrl.replace(/\/$/, '')}/uploads/${this.bucketType}/${encodedPath}`;
   }
 
   async getSignedUrl(path: string): Promise<SignedUrl> {

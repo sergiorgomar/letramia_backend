@@ -19,27 +19,21 @@ import { SupabaseClient } from '@supabase/supabase-js';
     {
       provide: PRIVATE_STORAGE,
       inject: [SUPABASE_ADMIN_PROVIDER, ConfigService],
-      useFactory: (supabase: SupabaseClient, config: ConfigService) => {
+      useFactory: (supabaseClient: SupabaseClient, config: ConfigService) => {
         const useLocalStorage = config.get('STORAGE_DRIVER') === 'local';
         return useLocalStorage
-          ? new LocalStorageProvider('private')
-          : new SupabaseStorageProvider(
-              supabase,
-              config.get<string>('SUPABASE_PRIVATE_BUCKET')!,
-            );
+          ? new LocalStorageProvider('private', config)
+          : new SupabaseStorageProvider(supabaseClient, config, 'private');
       },
     },
     {
       provide: PUBLIC_STORAGE,
       inject: [SUPABASE_ADMIN_PROVIDER, ConfigService],
-      useFactory: (supabase: SupabaseClient, config: ConfigService) => {
+      useFactory: (supabaseClient: SupabaseClient, config: ConfigService) => {
         const useLocalStorage = config.get('STORAGE_DRIVER') === 'local';
         return useLocalStorage
-          ? new LocalStorageProvider('public')
-          : new SupabaseStorageProvider(
-              supabase,
-              config.get<string>('SUPABASE_PUBLIC_BUCKET')!,
-            );
+          ? new LocalStorageProvider('public', config)
+          : new SupabaseStorageProvider(supabaseClient, config, 'public');
       },
     },
   ],

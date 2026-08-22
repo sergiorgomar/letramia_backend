@@ -9,6 +9,7 @@ import { PRIVATE_STORAGE, PUBLIC_STORAGE } from '@/common/constants';
 import { FilesRepository } from '../repositories/files.repository';
 import { ContentSecurityUtils } from '@/common/utils/content-security.utils';
 import { WorkStatus } from '@/modules/works/types/work-status.enum';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class WorksFilesService {
@@ -109,7 +110,13 @@ export class WorksFilesService {
      * ESTA TODO MUY REVUELTO NO SE ENTIENDE BIEN
      */
     const { wordCount, characterCount, html } =
-      ContentSecurityUtils.sanitizeHtmlWithStats(file.buffer.toString('utf8'));
+      ContentSecurityUtils.sanitizeHtmlWithStats(file.buffer.toString('utf8'), {
+        allowLinks: true,
+        allowImages: true,
+        allowedImageUrlPrefix: this.publicStorageService.getPublicUrl(
+          `works/${workId}/content-images/`,
+        ),
+      });
     const sanitizedBuffer = Buffer.from(html, 'utf8');
 
     switch (work.genreSlug) {
@@ -152,6 +159,51 @@ export class WorksFilesService {
           genreSlug: work.genreSlug,
         });
     }
+  }
+
+  async uploadContentImage(
+    workId: string,
+    userId: string,
+    file?: any,
+  ): Promise<{ id: string; url: string }> {
+    if (!file) {
+      throw new AppException('WORK_CONTENT_IMAGE_FILE_MISSING', { workId });
+    }
+    if (!this.imageService.isValidContentImageMimeType(file.mimetype)) {
+      throw new AppException('WORK_CONTENT_IMAGE_UNSUPPORTED_TYPE', {
+        mimetype: file.mimetype,
+      });
+    }
+
+    const work = await this.filesRepository.findWorkContentByIdAndUserId(
+      workId,
+      userId,
+      undefined,
+    );
+    if (!work) throw new AppException('WORK_NOT_FOUND', { workId });
+    if (work.workStatus === WorkStatus.REJECTED) {
+      throw new AppException('CHAPTER_WORK_REJECTED_CANNOT_BE_CHANGED', {
+        workId,
+      });
+    }
+    let image;
+    try {
+      image = await this.imageService.generateContentImage(file.buffer);
+    } catch {
+      throw new AppException('WORK_CONTENT_IMAGE_UNSUPPORTED_TYPE', {
+        mimetype: file.mimetype,
+      });
+    }
+
+    const id = randomUUID();
+    const path = `works/${workId}/content-images/${id}.${image.extension}`;
+    await this.publicStorageService.upload(
+      path,
+      image.buffer,
+      image.contentType,
+    );
+
+    return { id, url: this.publicStorageService.getPublicUrl(path) };
   }
 
   async getManuscript(workId: string, userId: string, chapterId) {

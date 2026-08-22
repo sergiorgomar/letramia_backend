@@ -1,20 +1,32 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_ADMIN_PROVIDER } from '@/common/constants';
+import { ConfigService } from '@nestjs/config';
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export type SignedUrl = { url: string; expiresAt: Date };
+type BucketType = 'public' | 'private';
 
 @Injectable()
 export class SupabaseStorageProvider {
+  private readonly bucket: string;
+
   constructor(
-    @Inject(SUPABASE_ADMIN_PROVIDER) private readonly supabase: SupabaseClient,
-    private readonly bucket: string,
-  ) {}
+    @Inject(SUPABASE_ADMIN_PROVIDER)
+    private readonly supabaseClient: SupabaseClient,
+    private readonly config: ConfigService,
+    bucketType: BucketType,
+  ) {
+    this.bucket = this.config.getOrThrow<string>(
+      bucketType === 'public'
+        ? 'SUPABASE_PUBLIC_BUCKET'
+        : 'SUPABASE_PRIVATE_BUCKET',
+    );
+  }
 
   async upload(path: string, file: Buffer, contentType: string) {
-    const { error } = await this.supabase.storage
+    const { error } = await this.supabaseClient.storage
       .from(this.bucket)
       .upload(path, file, { contentType, upsert: true });
 
@@ -28,7 +40,7 @@ export class SupabaseStorageProvider {
   // Descarga el archivo como texto. Devuelve null si el objeto no existe,
   // para que el caller distinga "todavía no se subió" de un error real.
   async downloadText(path: string): Promise<string | null> {
-    const { data, error } = await this.supabase.storage
+    const { data, error } = await this.supabaseClient.storage
       .from(this.bucket)
       .download(path);
 
@@ -43,7 +55,7 @@ export class SupabaseStorageProvider {
     const objects = Array.isArray(paths) ? paths : [paths];
     if (objects.length === 0) return;
 
-    const { error } = await this.supabase.storage
+    const { error } = await this.supabaseClient.storage
       .from(this.bucket)
       .remove(objects);
 
@@ -57,12 +69,12 @@ export class SupabaseStorageProvider {
   getPublicUrl(path: string): string {
     const {
       data: { publicUrl },
-    } = this.supabase.storage.from(this.bucket).getPublicUrl(path);
+    } = this.supabaseClient.storage.from(this.bucket).getPublicUrl(path);
     return publicUrl;
   }
 
   async getSignedUrl(path: string): Promise<SignedUrl> {
-    const { data, error } = await this.supabase.storage
+    const { data, error } = await this.supabaseClient.storage
       .from(this.bucket)
       .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
 

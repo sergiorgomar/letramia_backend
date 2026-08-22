@@ -27,11 +27,24 @@ export interface ImageVariant {
   extension: 'webp';
 }
 
+export interface ContentImage {
+  buffer: Buffer;
+  contentType: 'image/webp';
+  extension: 'webp';
+}
+
 @Injectable()
 export class ImageProcessorService {
   COVER_MIN_ASPECT_RATIO = 0.6;
   COVER_MAX_ASPECT_RATIO = 0.8;
   COVER_ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  CONTENT_IMAGE_ALLOWED_MIME_TYPES = new Set([
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  ]);
+  CONTENT_IMAGE_ALLOWED_FORMATS = new Set(['jpeg', 'png', 'webp']);
+  CONTENT_IMAGE_MAX_DIMENSION = 4_000;
 
   async getDimensions(
     input: Buffer,
@@ -83,5 +96,42 @@ export class ImageProcessorService {
 
   isValidWorkCoverMimeType(mimetype: string): boolean {
     return this.COVER_ALLOWED_MIME_TYPES.has(mimetype);
+  }
+
+  async generateContentImage(input: Buffer): Promise<ContentImage> {
+    const metadata = await sharp(input, {
+      limitInputPixels: this.CONTENT_IMAGE_MAX_DIMENSION ** 2,
+    }).metadata();
+
+    if (
+      !metadata.width ||
+      !metadata.height ||
+      !metadata.format ||
+      !this.CONTENT_IMAGE_ALLOWED_FORMATS.has(metadata.format) ||
+      metadata.width > this.CONTENT_IMAGE_MAX_DIMENSION ||
+      metadata.height > this.CONTENT_IMAGE_MAX_DIMENSION
+    ) {
+      // 🔥 todo: aqui no se estan cacheando bien errores
+      throw new Error('La imagen de contenido no cumple los requisitos');
+    }
+
+    const buffer = await sharp(input, {
+      limitInputPixels: this.CONTENT_IMAGE_MAX_DIMENSION ** 2,
+    })
+      .rotate()
+      .resize({
+        width: 1_600,
+        height: 1_600,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 82 })
+      .toBuffer();
+
+    return { buffer, contentType: 'image/webp', extension: 'webp' };
+  }
+
+  isValidContentImageMimeType(mimetype: string): boolean {
+    return this.CONTENT_IMAGE_ALLOWED_MIME_TYPES.has(mimetype);
   }
 }

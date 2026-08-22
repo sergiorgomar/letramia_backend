@@ -58,6 +58,18 @@ export const WORKS_ERROR_CATALOG = {
     message: 'Formato de contenido no soportadp.',
     internalMessage: 'El mimetype del archivo de contenido no es HTML',
   },
+  WORK_CONTENT_IMAGE_FILE_MISSING: {
+    code: 'WORK-0038',
+    status: 400,
+    message: 'Debes adjuntar una imagen.',
+    internalMessage: 'No llegó ningún archivo de imagen en el multipart',
+  },
+  WORK_CONTENT_IMAGE_UNSUPPORTED_TYPE: {
+    code: 'WORK-0039',
+    status: 400,
+    message: 'La imagen debe ser JPG, PNG o WebP.',
+    internalMessage: 'Mimetype o contenido binario no permitido para imagen',
+  },
   WORK_CONTENT_INFO_FILE_MISSING: {
     code: 'WORK-0010',
     status: 400,

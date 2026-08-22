@@ -9,6 +9,8 @@ export interface SpamAnalysis {
 export interface ContentSecurityOptions {
   /** Los enlaces solo se permiten en contenido de pago. */
   allowLinks?: boolean;
+  allowImages?: boolean;
+  allowedImageUrlPrefix?: string;
 }
 
 export interface SanitizedHtmlStats {
@@ -45,6 +47,7 @@ export class ContentSecurityUtils {
     'h5',
     'h6',
     'a',
+    'img',
   ]);
 
   private static readonly DROP_WITH_CONTENT = new Set([
@@ -117,7 +120,8 @@ export class ContentSecurityUtils {
 
       if (
         !this.ALLOWED_TAGS.has(tagName) ||
-        (tagName === 'a' && !options.allowLinks)
+        (tagName === 'a' && !options.allowLinks) ||
+        (tagName === 'img' && !options.allowImages)
       ) {
         $(htmlElement).replaceWith($(htmlElement).contents());
         return;
@@ -155,6 +159,19 @@ export class ContentSecurityUtils {
           continue;
         }
 
+        if (tagName === 'img' && attribute === 'src') {
+          if (!this.isSafeImageUrl(value, options.allowedImageUrlPrefix)) {
+            $(element).remove();
+            return;
+          }
+          continue;
+        }
+
+        if (tagName === 'img' && attribute === 'alt') {
+          $(element).attr('alt', value.slice(0, 300));
+          continue;
+        }
+
         if (tagName !== 'a' || !['href', 'target', 'rel'].includes(attribute)) {
           $(element).removeAttr(name);
         }
@@ -162,6 +179,10 @@ export class ContentSecurityUtils {
 
       if (tagName === 'a' && $(element).attr('target') === '_blank') {
         $(element).attr('rel', 'noopener noreferrer');
+      }
+
+      if (tagName === 'img' && !$(element).attr('src')) {
+        $(element).remove();
       }
     });
 
@@ -371,6 +392,8 @@ export class ContentSecurityUtils {
         if (property === 'text-align')
           return /^(left|center|right|justify)$/i.test(value);
         if (property === 'font-size') return /^\d{1,3}px$/i.test(value);
+        if (property === 'line-height')
+          return /^(?:1(?:\.\d)?|2(?:\.0)?)$/.test(value);
         if (property === 'color' || property === 'background-color') {
           return /^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))$/i.test(
             value,
@@ -386,6 +409,20 @@ export class ContentSecurityUtils {
     try {
       const parsed = new URL(url, 'https://letramia.local');
       return ['http:', 'https:', 'mailto:'].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  }
+
+  private static isSafeImageUrl(url: string, allowedPrefix?: string): boolean {
+    if (!allowedPrefix) return false;
+    try {
+      const parsedUrl = new URL(url);
+      const parsedPrefix = new URL(allowedPrefix);
+      return (
+        parsedUrl.origin === parsedPrefix.origin &&
+        url.startsWith(allowedPrefix)
+      );
     } catch {
       return false;
     }

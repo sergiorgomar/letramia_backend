@@ -26,6 +26,7 @@ export class WebRepository {
   }
 
   @HandleErrors('DATABASE_ERROR')
+  // 🔥 TODO: eliminar este query cuando se retire sponsorBanner del contrato de /web/page-data.
   async getSponsorBannerData() {
     const works = await this.db
       .select({
