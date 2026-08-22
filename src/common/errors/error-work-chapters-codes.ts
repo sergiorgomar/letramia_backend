@@ -140,9 +140,9 @@ export const WORK_CHAPTERS_ERROR_CATALOG = {
   CHAPTER_IS_TOO_SHORT: {
     code: 'CHAP-0019',
     status: 409,
-    message: 'Este capítulo es demasiado corto.',
+    message: 'Este capítulo debe tener al menos 600 palabras para publicarse.',
     internalMessage:
-      'Se intentó publicar un capítulo con menos de 300 caracteres.',
+      'Se intentó publicar un capítulo con menos de 600 palabras.',
   },
   CHAPTER_NOT_MORE_PUBLISH_ATTEMPTS: {
     code: 'CHAP-0023',

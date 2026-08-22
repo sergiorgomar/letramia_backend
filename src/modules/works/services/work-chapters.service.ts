@@ -149,8 +149,8 @@ export class WorkChaptersService {
     }
 
     if (
-      chapter.status === WorkStatus.PUBLISHED ||
-      chapter.status === WorkStatus.REJECTED
+      chapter.status === WorkStatus.REJECTED ||
+      chapter.status === WorkStatus.PUBLISHED
     ) {
       throw new AppException('CHAPTER_STATUS_CANNOT_BE_CHANGED', {
         workId,
@@ -159,7 +159,8 @@ export class WorkChaptersService {
       });
     }
 
-    const slug = slugify(title);
+    const nextTitle = title.trim();
+    const slug = slugify(nextTitle);
     const chapterWithSameSlug =
       await this.workChaptersRepository.findBySlugAndWorkId(slug, workId);
 
@@ -167,12 +168,12 @@ export class WorkChaptersService {
       throw new AppException('CHAPTER_TITLE_ALREADY_EXISTS', {
         workId,
         chapterId,
-        title,
+        title: nextTitle,
         slug,
       });
     }
 
-    return this.workChaptersRepository.updateTitle(chapterId, title, slug);
+    return this.workChaptersRepository.updateTitle(chapterId, nextTitle, slug);
   }
 
   async publish(workId: string, chapterId: string, userId: string) {
@@ -253,8 +254,8 @@ export class WorkChaptersService {
       });
     }
 
-    const plainText = ContentSecurityUtils.htmlToPlainText(manuscript);
-    if (plainText.length < 300) {
+    const wordCount = ContentSecurityUtils.countWords(manuscript);
+    if (wordCount < 600) {
       throw new AppException('CHAPTER_IS_TOO_SHORT', { workId, chapterId });
     }
 

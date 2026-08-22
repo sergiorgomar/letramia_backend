@@ -17,7 +17,7 @@ export class FilesRepository {
   @HandleErrors('DATABASE_ERROR')
   async findWorkByIdAndUserId(id: string, userId: string) {
     const [work] = await this.db
-      .select({ id: workEntity.id })
+      .select({ id: workEntity.id, status: workEntity.status })
       .from(workEntity)
       .where(and(eq(workEntity.id, id), eq(workEntity.userId, userId)))
       .limit(1);

@@ -289,7 +289,9 @@ export class ContentSecurityUtils {
         if (!$(element).attr('title')) {
           $(element).attr(
             'title',
-            tagName === 'lite-instagram' ? 'Publicación de Instagram' : 'Publicación de Facebook',
+            tagName === 'lite-instagram'
+              ? 'Publicación de Instagram'
+              : 'Publicación de Facebook',
           );
         }
       }
@@ -304,6 +306,11 @@ export class ContentSecurityUtils {
 
     const $ = cheerio.load(this.sanitizeHtml(html), undefined, false);
     return this.getTextFromDocument($);
+  }
+
+  static countWords(content: string | null | undefined): number {
+    return (this.htmlToPlainText(content).match(/[\p{L}\p{N}_]+/gu) ?? [])
+      .length;
   }
 
   private static getTextFromDocument($: CheerioAPI): string {

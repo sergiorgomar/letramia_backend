@@ -25,11 +25,15 @@ export class WorksFilesService {
   async uploadCover(id: string, userId: string, file?: any): Promise<void> {
     const work = await this.filesRepository.findWorkByIdAndUserId(id, userId);
     if (!work) {
-      throw new AppException('WORK_NOT_FOUND', { id, userId });
+      throw new AppException('WORK_NOT_FOUND', { id });
+    }
+
+    if (work.status === WorkStatus.REJECTED) {
+      throw new AppException('WORK_REJECTED_CANNOT_BE_CHANGED', { id });
     }
 
     if (!file) {
-      throw new AppException('WORK_COVER_FILE_MISSING', { id, userId });
+      throw new AppException('WORK_COVER_FILE_MISSING', { id });
     }
 
     if (!this.imageService.isValidWorkCoverMimeType(file.mimetype)) {
@@ -94,10 +98,7 @@ export class WorksFilesService {
       });
     }
 
-    if (
-      work.chapterStatus === WorkStatus.PUBLISHED ||
-      work.chapterStatus === WorkStatus.REJECTED
-    ) {
+    if (work.chapterStatus === WorkStatus.REJECTED) {
       throw new AppException('CHAPTER_STATUS_CANNOT_BE_CHANGED', {
         workId,
         chapterId,
@@ -121,6 +122,33 @@ export class WorksFilesService {
           `works/${workId}/content-images/`,
         ),
       });
+
+    //🔥🔥 IMPORTANTE, DEBEMOS PASAR EL MODELO DE IA POR ACA TAMBIEN!!
+    const isPublishedContent = work.chapterId
+      ? work.chapterStatus === WorkStatus.PUBLISHED
+      : work.workStatus === WorkStatus.PUBLISHED;
+    if (isPublishedContent) {
+      const publishedWordCount = ContentSecurityUtils.countWords(html);
+      if (publishedWordCount < 600) {
+        throw new AppException('PUBLISHED_CONTENT_TOO_SHORT', {
+          workId,
+          chapterId,
+          wordCount: publishedWordCount,
+        });
+      }
+
+      const analysis = ContentSecurityUtils.analyzeSpam(html, {
+        allowLinks: true,
+      });
+      if (analysis.isSpam) {
+        throw new AppException('PUBLISHED_CONTENT_IS_SPAM', {
+          workId,
+          chapterId,
+          reasons: analysis.reasons,
+        });
+      }
+    }
+
     const sanitizedBuffer = Buffer.from(html, 'utf8');
 
     switch (work.genreSlug) {

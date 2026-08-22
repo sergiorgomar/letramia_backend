@@ -219,10 +219,14 @@ export class WorksRepository {
     return rows.map((row) => row.slug);
   }
 
-  @HandleErrors('WORKS_REPOSITORY_FIND_STATUS_BY_ID_AND_USER_ID_ERROR')
-  async findStatusByIdAndUserId(workId: string, userId: string) {
+  @HandleErrors('WORKS_REPOSITORY_FIND_UPDATE_DATA_BY_ID_AND_USER_ID_ERROR')
+  async findUpdateDataByIdAndUserId(workId: string, userId: string) {
     const [work] = await this.db
-      .select({ status: workEntity.status })
+      .select({
+        status: workEntity.status,
+        slug: workEntity.slug,
+        title: workEntity.title,
+      })
       .from(workEntity)
       .where(and(eq(workEntity.id, workId), eq(workEntity.userId, userId)))
       .limit(1);
@@ -263,7 +267,7 @@ export class WorksRepository {
         and(
           eq(workEntity.id, workId),
           eq(workEntity.userId, userId),
-          eq(workEntity.status, WorkStatus.DRAFT),
+          ne(workEntity.status, WorkStatus.REJECTED),
         ),
       )
       .returning({ id: workEntity.id });

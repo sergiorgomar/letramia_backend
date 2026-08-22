@@ -162,18 +162,25 @@ export const WORKS_ERROR_CATALOG = {
     message: 'Error interno del servidor.',
     internalMessage: 'Falló WorksRepository.findSlugsStartingWith',
   },
-  WORK_PUBLISHED_CANNOT_BE_UPDATED: {
-    code: 'WORK-0025',
+  WORK_REJECTED_CANNOT_BE_CHANGED: {
+    code: 'WORK-0038',
     status: 409,
-    message: 'No puedes editar una obra publicada.',
+    message: 'No puedes editar una obra rechazada.',
     internalMessage:
-      'Se intentó editar título, sinopsis o temática de una obra publicada',
+      'Se intentó editar título, sinopsis o temática de una obra rechazada',
   },
-  WORKS_REPOSITORY_FIND_STATUS_BY_ID_AND_USER_ID_ERROR: {
+  WORK_PUBLISHED_TITLE_CANNOT_BE_CHANGED: {
+    code: 'WORK-0039',
+    status: 409,
+    message:
+      'No puedes cambiar el título de una obra publicada porque su URL pública se conservará.',
+    internalMessage: 'Se intentó cambiar el título de una obra publicada',
+  },
+  WORKS_REPOSITORY_FIND_UPDATE_DATA_BY_ID_AND_USER_ID_ERROR: {
     code: 'WORK-0026',
     status: 500,
     message: 'Error interno del servidor.',
-    internalMessage: 'Falló WorksRepository.findStatusByIdAndUserId',
+    internalMessage: 'Falló WorksRepository.findUpdateDataByIdAndUserId',
   },
   WORKS_REPOSITORY_FIND_THEME_ID_BY_SLUG_ERROR: {
     code: 'WORK-0027',
@@ -249,7 +256,23 @@ export const WORKS_ERROR_CATALOG = {
   WORK_IS_TOO_SHORT: {
     code: 'WORK-0036',
     status: 409,
-    message: 'Su obra es demasiado corta.',
-    internalMessage: 'Se intenta publicar una con menos de 300 palabras.',
+    message: 'Tu obra debe tener al menos 600 palabras para publicarse.',
+    internalMessage: 'Se intentó publicar una obra con menos de 600 palabras.',
+  },
+  PUBLISHED_CONTENT_TOO_SHORT: {
+    code: 'WORK-0040',
+    status: 409,
+    message:
+      'No se guardaron los cambios: el contenido publicado debe tener al menos 600 palabras.',
+    internalMessage:
+      'Se intentó guardar contenido publicado con menos de 600 palabras.',
+  },
+  PUBLISHED_CONTENT_IS_SPAM: {
+    code: 'WORK-0041',
+    status: 409,
+    message:
+      'No se guardaron los cambios: el contenido no cumple las políticas de publicación.',
+    internalMessage:
+      'Se intentó guardar contenido publicado que activó el análisis de spam.',
   },
 } as const;

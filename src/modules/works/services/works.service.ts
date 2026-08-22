@@ -110,7 +110,7 @@ export class WorksService {
     synopsis: string | undefined,
     workThemeSlug: string,
   ) {
-    const work = await this.worksRepository.findStatusByIdAndUserId(
+    const work = await this.worksRepository.findUpdateDataByIdAndUserId(
       workId,
       userId,
     );
@@ -119,14 +119,22 @@ export class WorksService {
       throw new AppException('WORK_NOT_FOUND', { workId, userId });
     }
 
-    if (work.status === WorkStatus.PUBLISHED) {
-      throw new AppException('WORK_PUBLISHED_CANNOT_BE_UPDATED', {
+    const nextTitle = title.trim();
+
+    if (work.status === WorkStatus.REJECTED) {
+      throw new AppException('WORK_REJECTED_CANNOT_BE_CHANGED', {
         workId,
         userId,
       });
     }
 
-    const nextTitle = title.trim();
+    if (work.status === WorkStatus.PUBLISHED && nextTitle !== work.title) {
+      throw new AppException('WORK_PUBLISHED_TITLE_CANNOT_BE_CHANGED', {
+        workId,
+        userId,
+      });
+    }
+
     const nextWorkThemeSlug = workThemeSlug.trim();
     const nextSynopsis =
       synopsis === undefined ? undefined : synopsis.trim() || null;
@@ -206,9 +214,9 @@ export class WorksService {
          * 🔥 DARLE UNA VUELTA A ESTO DE LAS SANITIZADAS, DEL SPAM
          * ESTA TODO MUY REVUELTO NO SE ENTIENDE BIEN
          */
-        const planed = ContentSecurityUtils.htmlToPlainText(manuscript);
+        const wordCount = ContentSecurityUtils.countWords(manuscript);
 
-        if (planed.length < 300) {
+        if (wordCount < 600) {
           throw new AppException('WORK_IS_TOO_SHORT', {
             workId,
           });
