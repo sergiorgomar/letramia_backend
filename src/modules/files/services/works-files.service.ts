@@ -113,6 +113,7 @@ export class WorksFilesService {
       ContentSecurityUtils.sanitizeHtmlWithStats(file.buffer.toString('utf8'), {
         allowLinks: true,
         allowImages: true,
+        allowYoutube: true,
         allowedImageUrlPrefix: this.publicStorageService.getPublicUrl(
           `works/${workId}/content-images/`,
         ),

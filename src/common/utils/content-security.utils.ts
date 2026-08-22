@@ -7,10 +7,11 @@ export interface SpamAnalysis {
 }
 
 export interface ContentSecurityOptions {
-  /** Los enlaces solo se permiten en contenido de pago. */
+  /** Los enlaces están habilitados mientras no exista una restricción de plan. */
   allowLinks?: boolean;
   allowImages?: boolean;
   allowedImageUrlPrefix?: string;
+  allowYoutube?: boolean;
 }
 
 export interface SanitizedHtmlStats {
@@ -46,8 +47,10 @@ export class ContentSecurityUtils {
     'h4',
     'h5',
     'h6',
+    'hr',
     'a',
     'img',
+    'lite-youtube',
   ]);
 
   private static readonly DROP_WITH_CONTENT = new Set([
@@ -121,7 +124,8 @@ export class ContentSecurityUtils {
       if (
         !this.ALLOWED_TAGS.has(tagName) ||
         (tagName === 'a' && !options.allowLinks) ||
-        (tagName === 'img' && !options.allowImages)
+        (tagName === 'img' && !options.allowImages) ||
+        (tagName === 'lite-youtube' && !options.allowYoutube)
       ) {
         $(htmlElement).replaceWith($(htmlElement).contents());
         return;
@@ -172,6 +176,20 @@ export class ContentSecurityUtils {
           continue;
         }
 
+        if (tagName === 'lite-youtube' && attribute === 'videoid') {
+          if (!this.isValidYoutubeVideoId(value)) {
+            $(element).remove();
+            return;
+          }
+          $(element).attr('videoid', value);
+          continue;
+        }
+
+        if (tagName === 'lite-youtube' && attribute === 'title') {
+          $(element).attr('title', value.slice(0, 200));
+          continue;
+        }
+
         if (tagName === 'img' && ['width', 'height'].includes(attribute)) {
           const dimension = this.sanitizeImageDimension(value);
           if (dimension) $(element).attr(attribute, dimension);
@@ -190,6 +208,16 @@ export class ContentSecurityUtils {
 
       if (tagName === 'img' && !$(element).attr('src')) {
         $(element).remove();
+      }
+
+      if (tagName === 'lite-youtube') {
+        if (!$(element).attr('videoid')) {
+          $(element).remove();
+          return;
+        }
+        if (!$(element).attr('title')) {
+          $(element).attr('title', 'Video de YouTube');
+        }
       }
     });
 
@@ -442,5 +470,9 @@ export class ContentSecurityUtils {
     } catch {
       return false;
     }
+  }
+
+  private static isValidYoutubeVideoId(videoId: string): boolean {
+    return /^[\w-]{11}$/.test(videoId);
   }
 }
